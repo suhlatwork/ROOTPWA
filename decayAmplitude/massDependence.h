@@ -295,7 +295,9 @@ namespace rpwa {
 
 	private:
 		double _piChargedMass;
+		double _piNeutralMass;
 		double _kaonChargedMass;
+		double _kaonNeutralMass;
 
 	};
 

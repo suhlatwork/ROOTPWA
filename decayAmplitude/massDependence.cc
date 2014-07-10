@@ -237,7 +237,9 @@ f0980Flatte::f0980Flatte()
 			throw;
 		}
 	_piChargedMass   = pdt.entry("pi+")->mass();
+	_piNeutralMass   = pdt.entry("pi0")->mass();
 	_kaonChargedMass = pdt.entry("K+" )->mass();
+	_kaonNeutralMass = pdt.entry("K0" )->mass();
 }
 
 
@@ -257,8 +259,8 @@ f0980Flatte::amp(const isobarDecayVertex& v)
 	const double g2g1 = 4.21;
 
 	// break-up momenta
-	const std::complex<double> kPi = breakupMomentumComplex(M, _piChargedMass,   _piChargedMass);
-	const std::complex<double> kK  = breakupMomentumComplex(M, _kaonChargedMass, _kaonChargedMass);
+	const std::complex<double> kPi = (2. * breakupMomentumComplex(M, _piChargedMass,   _piChargedMass)   + 1. * breakupMomentumComplex(M, _piNeutralMass,   _piNeutralMass)  ) / 3.;
+	const std::complex<double> kK  = (1. * breakupMomentumComplex(M, _kaonChargedMass, _kaonChargedMass) + 1. * breakupMomentumComplex(M, _kaonNeutralMass, _kaonNeutralMass)) / 2.;
 
 	// phase space factors
 	const std::complex<double> rhoPi = 2. * kPi / M;
