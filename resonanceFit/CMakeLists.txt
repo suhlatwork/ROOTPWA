@@ -41,6 +41,12 @@ include_directories(
 	${YamlCpp_INCLUDE_DIR}
 	${ROOT_INCLUDE_DIR}
 	)
+if(USE_BAT)
+	include_directories(
+		SYSTEM
+		${BAT_INCLUDE_DIR}
+		)
+endif()
 
 
 # source files that are compiled into library
@@ -61,6 +67,9 @@ set(SOURCES
 	resonanceFitReadData.cc
 	resonanceFitWriteConfig.cc
 	)
+if(USE_BAT)
+	LIST(APPEND SOURCES minimizerBat.cc)
+endif()
 
 
 # library
@@ -75,6 +84,12 @@ make_shared_library(
 	"${RPWA_PARTIALWAVEFIT_LIB}"
 	"${RPWA_DECAYAMPLITUDE_LIB}"
 	)
+if(USE_BAT)
+	target_link_libraries(${THIS_LIB} "${BAT_LIBRARIES}" "${BAT_LINKER_FLAGS}")
+endif()
 
 
 make_executable(resonanceFit resonanceFitExe.cc ${THIS_LIB})
+if(USE_BAT)
+	make_executable(resonanceFitBat resonanceFitExeBat.cc ${THIS_LIB})
+endif()
