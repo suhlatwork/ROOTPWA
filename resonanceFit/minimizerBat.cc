@@ -49,9 +49,9 @@ rpwa::resonanceFit::minimizerBat::functionAdaptor::functionAdaptor(const rpwa::r
 
 
 double
-rpwa::resonanceFit::minimizerBat::functionAdaptor::LogAPrioriProbability(const std::vector<double>& /*parameters*/)
+rpwa::resonanceFit::minimizerBat::functionAdaptor::LogAPrioriProbability(const std::vector<double>& parameters)
 {
-	return 0.;
+	return _fitFunction->logPriorLikelihood(parameters);
 }
 
 
@@ -305,6 +305,10 @@ rpwa::resonanceFit::minimizerBat::initParameters(const rpwa::resonanceFit::param
 				_functionAdaptor.AddParameter(name,
 				                              parameter.limitLower(),
 				                              parameter.limitUpper());
+
+				// parameters with 0 error are assumed to have a flat prior
+				if (parameter.startError() == 0.0)
+					printInfo << "parameter " << parcount << " ('" << name << "') has a flat prior." << std::endl;
 			} else {
 				printErr << "parameter " << parcount << " ('" << name << "') is not limited to a range, this is not supported by BAT." << std::endl;
 				return false;
