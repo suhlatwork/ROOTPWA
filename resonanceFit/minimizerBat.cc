@@ -192,15 +192,15 @@ rpwa::resonanceFit::minimizerBat::initParameters(const rpwa::resonanceFit::param
 				} else {
 					printInfo << "parameter " << parcount << " ('" << (prefixName.str() + "__real") << "') is unlimited" << std::endl;
 					_functionAdaptor.AddParameter(prefixName.str() + "__real",
-					                              channel.isAnchor(idxBin) ? 0. : -std::numeric_limits<double>::max(),
-					                              std::numeric_limits<double>::max());
+					                              channel.isAnchor(idxBin) ? 0. : -3000.0,
+					                              3000.0);
 					++parcount;
 
 					if(not channel.isAnchor(idxBin)) {
 						printInfo << "parameter " << parcount << " ('" << (prefixName.str() + "__imag") << "') is unlimited" << std::endl;
 						_functionAdaptor.AddParameter(prefixName.str() + "__imag",
-						                              -std::numeric_limits<double>::max(),
-						                              std::numeric_limits<double>::max());
+						                              -3000.0,
+						                              3000.0);
 						++parcount;
 					}
 				}
@@ -257,14 +257,14 @@ rpwa::resonanceFit::minimizerBat::initParameters(const rpwa::resonanceFit::param
 			} else {
 				printInfo << "parameter " << parcount << " ('" << (prefixName.str() + "__real") << "') is unlimited" << std::endl;
 				_functionAdaptor.AddParameter(prefixName.str() + "__real",
-				                              -std::numeric_limits<double>::max(),
-				                              std::numeric_limits<double>::max());
+				                              -3000.0,
+				                              3000.0);
 				++parcount;
 
 				printInfo << "parameter " << parcount << " ('" << (prefixName.str() + "__imag") << "') is unlimited" << std::endl;
 				_functionAdaptor.AddParameter(prefixName.str() + "__imag",
-				                              -std::numeric_limits<double>::max(),
-				                              std::numeric_limits<double>::max());
+				                              -3000.0,
+				                              3000.0);
 				++parcount;
 			}
 		} // end loop over channels
@@ -305,23 +305,9 @@ rpwa::resonanceFit::minimizerBat::initParameters(const rpwa::resonanceFit::param
 				_functionAdaptor.AddParameter(name,
 				                              parameter.limitLower(),
 				                              parameter.limitUpper());
-			} else if(parameter.limitedLower()) {
-				printInfo << "parameter " << parcount << " ('" << name << "') "
-				          << "limited larger than " << parameter.limitLower() << std::endl;
-				_functionAdaptor.AddParameter(name,
-				                              parameter.limitLower(),
-				                              std::numeric_limits<double>::max());
-			} else if(parameter.limitedUpper()) {
-				printInfo << "parameter " << parcount << " ('" << name << "') "
-				          << "limited smaller than " << parameter.limitUpper() << std::endl;
-				_functionAdaptor.AddParameter(name,
-				                              -std::numeric_limits<double>::max(),
-				                              parameter.limitUpper());
 			} else {
-				printInfo << "parameter " << parcount << " ('" << name << "') is unlimited" << std::endl;
-				_functionAdaptor.AddParameter(name,
-				                              -std::numeric_limits<double>::max(),
-				                              std::numeric_limits<double>::max());
+				printErr << "parameter " << parcount << " ('" << name << "') is not limited to a range, this is not supported by BAT." << std::endl;
+				return false;
 			}
 			++parcount;
 		}
@@ -358,23 +344,9 @@ rpwa::resonanceFit::minimizerBat::initParameters(const rpwa::resonanceFit::param
 					_functionAdaptor.AddParameter(name.str(),
 					                              parameter.limitLower(),
 					                              parameter.limitUpper());
-				} else if(parameter.limitedLower()) {
-					printInfo << "parameter " << parcount << " ('" << name.str() << "') "
-					          << "limited larger than " << parameter.limitLower() << std::endl;
-					_functionAdaptor.AddParameter(name.str(),
-					                              parameter.limitLower(),
-					                              std::numeric_limits<double>::max());
-				} else if(parameter.limitedUpper()) {
-					printInfo << "parameter " << parcount << " ('" << name.str() << "') "
-					          << "limited smaller than " << parameter.limitUpper() << std::endl;
-					_functionAdaptor.AddParameter(name.str(),
-					                              -std::numeric_limits<double>::max(),
-					                              parameter.limitUpper());
 				} else {
-					printInfo << "parameter " << parcount << " ('" << name.str() << "') is unlimited" << std::endl;
-					_functionAdaptor.AddParameter(name.str(),
-					                              -std::numeric_limits<double>::max(),
-					                              std::numeric_limits<double>::max());
+					printErr << "parameter " << parcount << " ('" << name.str() << "') is not limited to a range, this is not supported by BAT." << std::endl;
+					return false;
 				}
 				++parcount;
 			}
