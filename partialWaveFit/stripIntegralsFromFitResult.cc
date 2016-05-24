@@ -139,7 +139,7 @@ main(int    argc,
 		const unsigned int               normNmbEvents = inResult->normNmbEvents();
 		const double                     massBinCenter = inResult->massBinCenter();
 		const double                     logLikelihood = inResult->logLikelihood();
-		const int                        rank          = inResult->rank();
+		const unsigned int               rank          = inResult->rank();
 		const fitResult::prodAmpInfoType prodAmpInfo   = inResult->prodAmpInfo();
 
 		const complexMatrix              normIntegral(0, 0);
