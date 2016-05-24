@@ -269,9 +269,9 @@ namespace {
 	bp::list fitResult_fitParCovIndices(const rpwa::fitResult self)
 	{
 		bp::list retval;
-		const std::vector<std::pair<Int_t, Int_t> >& fitParCovIndices = self.fitParCovIndices();
+		const std::vector<std::pair<int, int> >& fitParCovIndices = self.fitParCovIndices();
 		for(unsigned int i = 0; i < fitParCovIndices.size(); ++i) {
-			const std::pair<Int_t, Int_t>& item = fitParCovIndices[i];
+			const std::pair<int, int>& item = fitParCovIndices[i];
 			retval.append(bp::make_tuple(item.first, item.second));
 		}
 		return retval;
@@ -285,8 +285,8 @@ namespace {
 	bp::dict fitResult_normIntIndexMap(const rpwa::fitResult self)
 	{
 		bp::dict retval;
-		const std::map<Int_t, Int_t>& normIntIndexMap = self.normIntIndexMap();
-		for(std::map<Int_t, Int_t>::const_iterator it = normIntIndexMap.begin(); it != normIntIndexMap.end(); ++it)
+		const std::map<int, int>& normIntIndexMap = self.normIntIndexMap();
+		for(std::map<int, int>::const_iterator it = normIntIndexMap.begin(); it != normIntIndexMap.end(); ++it)
 		{
 			retval[it->first] = it->second;
 		}
@@ -313,11 +313,6 @@ namespace {
 		std::stringstream sstr;
 		self.printWaves(sstr);
 		return sstr.str();
-	}
-
-	int fitResult_Write(const rpwa::fitResult& self, const char* name = 0)
-	{
-		return self.Write(name);
 	}
 
 }
@@ -417,7 +412,6 @@ void rpwa::py::exportFitResult() {
 		.def("printProdAmps", &fitResult_printProdAmps)
 		.def("printWaves", &fitResult_printWaves)
 
-		.def("Write", &fitResult_Write, bp::arg("name")=0)
 		.def("setBranchAddress", &rpwa::py::setBranchAddress<rpwa::fitResult*>)
 		.def(
 			"branch"

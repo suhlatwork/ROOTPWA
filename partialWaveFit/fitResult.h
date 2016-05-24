@@ -49,7 +49,6 @@
 #include <boost/tuple/tuple.hpp>
 #endif
 
-#include "TObject.h"
 #include "TComplex.h"
 #include "TMatrixT.h"
 #include "TString.h"
@@ -106,7 +105,7 @@ namespace rpwa {
 
 
 	/// \brief data storage class for PWA fit result of one kinematic bin
-	class fitResult : public TObject {
+	class fitResult {
 
 	public:
 
@@ -128,7 +127,7 @@ namespace rpwa {
 		          const unsigned int         normNmbEvents,         // number of events to normalize to
 		          const double               massBinCenter,         // center value of mass bin
 		          const double               logLikelihood,         // log(likelihood) at maximum
-		          const int                  rank,                  // rank of fit
+		          const unsigned int         rank,                  // rank of fit
 		          const prodAmpInfoType&     prodAmpInfo,           // production amplitude information
 		          const TMatrixT<double>&    fitParCovMatrix,       // covariance matrix of fit parameters
 		          const rpwa::complexMatrix& normIntegral,          // normalization integral matrix
@@ -276,17 +275,17 @@ namespace rpwa {
 
 		// low level interface to make copying easier
 #ifndef __CINT__
-		inline prodAmpInfoType                       prodAmpInfo               () const;
+		inline prodAmpInfoType                   prodAmpInfo               () const;
 #endif
-		const std::vector<TComplex>&                 prodAmps                  () const { return _prodAmps;               }
-		const std::vector<std::string>&              prodAmpNames              () const { return _prodAmpNames;           }
-		const std::vector<std::string>&              waveNames                 () const { return _waveNames;              }
-		const TMatrixT<Double_t>&                    fitParCovMatrix           () const { return _fitParCovMatrix;        }
-		const std::vector<std::pair<Int_t, Int_t> >& fitParCovIndices          () const { return _fitParCovMatrixIndices; }
-		const rpwa::complexMatrix&                   normIntegralMatrix        () const { return _normIntegral;           }
-		const rpwa::complexMatrix&                   acceptedNormIntegralMatrix() const { return _acceptedNormIntegral;   }
-		const std::vector<double>&                   phaseSpaceIntegralVector  () const { return _phaseSpaceIntegral;     }
-		const std::map<Int_t, Int_t>&                normIntIndexMap           () const { return _normIntIndexMap;        }
+		const std::vector<TComplex>&             prodAmps                  () const { return _prodAmps;               }
+		const std::vector<std::string>&          prodAmpNames              () const { return _prodAmpNames;           }
+		const std::vector<std::string>&          waveNames                 () const { return _waveNames;              }
+		const TMatrixT<double>&                  fitParCovMatrix           () const { return _fitParCovMatrix;        }
+		const std::vector<std::pair<int, int> >& fitParCovIndices          () const { return _fitParCovMatrixIndices; }
+		const rpwa::complexMatrix&               normIntegralMatrix        () const { return _normIntegral;           }
+		const rpwa::complexMatrix&               acceptedNormIntegralMatrix() const { return _acceptedNormIntegral;   }
+		const std::vector<double>&               phaseSpaceIntegralVector  () const { return _phaseSpaceIntegral;     }
+		const std::map<int, int>&                normIntIndexMap           () const { return _normIntIndexMap;        }
 
 
 		inline std::ostream& printProdAmps    (std::ostream& out = std::cout) const;  ///< prints all production amplitudes and their covariance matrix
@@ -324,28 +323,27 @@ namespace rpwa {
 
 
 		// stored data
-		UInt_t                                _nmbEvents;                 ///< number of events in bin
-		UInt_t                                _normNmbEvents;             ///< number of events to normalize to
-		Double_t                              _massBinCenter;             ///< center value of mass bin
-		Double_t                              _logLikelihood;             ///< log(likelihood) at maximum
-		Int_t                                 _rank;                      ///< rank of fit
-		std::vector<TComplex>                 _prodAmps;                  ///< production amplitudes
-		std::vector<std::string>              _prodAmpNames;              ///< names of production amplitudes used in fit
-		std::vector<std::string>              _waveNames;                 ///< names of waves used in fit
-		Bool_t                                _covMatrixValid;            ///< indicates whether bin has a valid covariance matrix
-		TMatrixT<Double_t>                    _fitParCovMatrix;           ///< covariance matrix of fit parameters
-		std::vector<std::pair<Int_t, Int_t> > _fitParCovMatrixIndices;    ///< indices of fit parameters for real and imaginary part in covariance matrix matrix
-		rpwa::complexMatrix                   _normIntegral;         //|| ///< normalization integral over full phase space without acceptance
-		rpwa::complexMatrix                   _acceptedNormIntegral; //|| ///< normalization integral over accepted phase space
-		std::map<Int_t, Int_t>                _normIntIndexMap;           ///< maps production amplitude indices to indices in normalization integral
-		std::vector<double>                   _phaseSpaceIntegral;        ///< diagonals of phase space integrals (without acceptance)
-		bool                                  _converged;                 ///< indicates whether fit has converged (according to minimizer)
-		bool                                  _hasHessian;                ///< indicates whether Hessian matrix has been calculated successfully
+		unsigned int                      _nmbEvents;                 ///< number of events in bin
+		unsigned int                      _normNmbEvents;             ///< number of events to normalize to
+		double                            _massBinCenter;             ///< center value of mass bin
+		double                            _logLikelihood;             ///< log(likelihood) at maximum
+		unsigned int                      _rank;                      ///< rank of fit
+		std::vector<TComplex>             _prodAmps;                  ///< production amplitudes
+		std::vector<std::string>          _prodAmpNames;              ///< names of production amplitudes used in fit
+		std::vector<std::string>          _waveNames;                 ///< names of waves used in fit
+		bool                              _covMatrixValid;            ///< indicates whether bin has a valid covariance matrix
+		TMatrixT<double>                  _fitParCovMatrix;           ///< covariance matrix of fit parameters
+		std::vector<std::pair<int, int> > _fitParCovMatrixIndices;    ///< indices of fit parameters for real and imaginary part in covariance matrix matrix
+		rpwa::complexMatrix               _normIntegral;         //|| ///< normalization integral over full phase space without acceptance
+		rpwa::complexMatrix               _acceptedNormIntegral; //|| ///< normalization integral over accepted phase space
+		std::map<int, int>                _normIntIndexMap;           ///< maps production amplitude indices to indices in normalization integral
+		std::vector<double>               _phaseSpaceIntegral;        ///< diagonals of phase space integrals (without acceptance)
+		bool                              _converged;                 ///< indicates whether fit has converged (according to minimizer)
+		bool                              _hasHessian;                ///< indicates whether Hessian matrix has been calculated successfully
 		// add more info about fit: quality of fit information, ndf, list of fixed parameters, ...
 
-	public:
 
-		ClassDef(fitResult, 6)
+		ClassDef(fitResult, 7)
 
 	};  // class fitResult
 
@@ -505,7 +503,7 @@ namespace rpwa {
 		out << "    normalization integral (w/o acceptance):" << std::endl << _normIntegral << std::endl;
 		out << "    normalization integral (with acceptance):" << std::endl << _acceptedNormIntegral << std::endl;
 		out << "    map of production amplitude indices to indices in normalization integral:" << std::endl;
-		for (std::map<Int_t, Int_t>::const_iterator i = _normIntIndexMap.begin(); i != _normIntIndexMap.end(); ++i)
+		for (std::map<int, int>::const_iterator i = _normIntIndexMap.begin(); i != _normIntIndexMap.end(); ++i)
 			out << "        prod. amp [" << std::setw(3) << i->first << "] "
 			    << "-> norm. int. [" << std::setw(3) << i->second << "]" << std::endl;
 		return out;

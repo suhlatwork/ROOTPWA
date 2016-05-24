@@ -52,9 +52,6 @@ using namespace std;
 using namespace rpwa;
 
 
-ClassImp(fitResult);
-
-
 namespace {
 
 
@@ -91,8 +88,7 @@ fitResult::fitResult()
 
 
 fitResult::fitResult(const fitResult& result)
-	: TObject(),
-	  _nmbEvents             (result.nmbEvents()),
+	: _nmbEvents             (result.nmbEvents()),
 	  _normNmbEvents         (result.normNmbEvents()),
 	  _massBinCenter         (result.massBinCenter()),
 	  _logLikelihood         (result.logLikelihood()),
@@ -127,7 +123,7 @@ fitResult::variedProdAmps() const
 	printDebug << "starting Cholesky decomposition... " << endl;
 	TDecompChol decomp(_fitParCovMatrix);
 	decomp.Decompose();
-	const TMatrixT<Double_t> C(decomp.GetU());
+	const TMatrixT<double> C(decomp.GetU());
 	printDebug << "... done." << endl;
 
 	const unsigned int npar = C.GetNrows();
@@ -144,10 +140,10 @@ fitResult::variedProdAmps() const
 	// loop over production amps
 	const unsigned int nt = _prodAmps.size();
 	for (unsigned int it = 0; it < nt; ++it) {
-		const Int_t jre = _fitParCovMatrixIndices[it].first;
-		const Int_t jim = _fitParCovMatrixIndices[it].second;
-		double      re  = result->_prodAmps[it].Re();
-		double      im  = result->_prodAmps[it].Im();
+		const int jre = _fitParCovMatrixIndices[it].first;
+		const int jim = _fitParCovMatrixIndices[it].second;
+		double    re  = result->_prodAmps[it].Re();
+		double    im  = result->_prodAmps[it].Im();
 		if(jre > -1)
 			re += y(jre, 0);
 		if(jim > -1)
@@ -189,7 +185,7 @@ fitResult::fill(const unsigned int      nmbEvents,             // number of even
                 const unsigned int      normNmbEvents,         // number of events to normalize to
                 const double            massBinCenter,         // center value of mass bin
                 const double            logLikelihood,         // log(likelihood) at maximum
-                const int               rank,                  // rank of fit
+                const unsigned int      rank,                  // rank of fit
                 const prodAmpInfoType&  prodAmpInfo,           // production amplitude information
                 const TMatrixT<double>& fitParCovMatrix,       // covariance matrix of fit parameters
                 const complexMatrix&    normIntegral,          // normalization integral matrix
@@ -368,7 +364,7 @@ fitResult::evidenceComponents() const
 	if (covMatrixValid()) {
 		// for the list of thresholded production amplitudes get the list of
 		// columns and rows of the covariance matrix that are thresholded
-		set<Int_t> thrColAndRowIndices;
+		set<int> thrColAndRowIndices;
 		for (set<unsigned int>::const_iterator it = thrProdAmpIndices.begin();
 		     it != thrProdAmpIndices.end(); ++it) {
 			thrColAndRowIndices.insert(fitParCovIndices()[*it].first);
@@ -377,17 +373,17 @@ fitResult::evidenceComponents() const
 		}
 
 		// create a new covariance matrix with the thresholded entries removed
-		TMatrixT<Double_t> thrCovMatrix(fitParCovMatrix().GetNrows()-thrColAndRowIndices.size(),
-		                                fitParCovMatrix().GetNcols()-thrColAndRowIndices.size());
-		Int_t row = -1;
-		for (Int_t i = 0; i < fitParCovMatrix().GetNrows(); ++i) {
+		TMatrixT<double> thrCovMatrix(fitParCovMatrix().GetNrows()-thrColAndRowIndices.size(),
+		                              fitParCovMatrix().GetNcols()-thrColAndRowIndices.size());
+		int row = -1;
+		for (int i = 0; i < fitParCovMatrix().GetNrows(); ++i) {
 			if (thrColAndRowIndices.count(i) > 0) {
 				continue;
 			}
 			row++;
 
-			Int_t col = -1;
-			for (Int_t j = 0; j < fitParCovMatrix().GetNcols(); ++j) {
+			int col = -1;
+			for (int j = 0; j < fitParCovMatrix().GetNcols(); ++j) {
 				if (thrColAndRowIndices.count(j) > 0) {
 					continue;
 				}
