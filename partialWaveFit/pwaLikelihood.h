@@ -80,9 +80,12 @@ namespace rpwa {
 		typedef boost::multi_array<bool,                                      2> waveAmpAddedArrayType; // array for wave amplitudes read
 		typedef std::map<std::string, std::pair<unsigned int, unsigned int>    > waveParamsType;        // map wave names to reflectivity and index in reflectivity
 		typedef boost::tuples::tuple<std::string, rpwa::waveDescription, double> waveDescThresType;     // tuple for wave name, wave description and threshold
-		typedef boost::tuples::tuple<std::vector<std::string>,                                          // tuple for production amplitude name,
+		typedef boost::tuples::tuple<std::vector<std::string>,                                          // tuple for wave name,
+		                             std::vector<std::vector<unsigned int> > >   waveInfoType;          //           and indices of production amplitudes
+		typedef boost::tuples::tuple<std::vector<unsigned int>,                                         // tuple for index of wave
+		                             std::vector<unsigned int>,                                         //           rank,
 		                             std::vector<std::complex<double> >,                                //           value,
-		                             std::vector<std::pair<int, int> > >         prodAmpInfoType;       //           and indices in covariance matrix
+		                             std::vector<std::pair<int, int> > >         prodAmpInfoType;       //           and indices in covariance matrix for production amplitude
 
 
 	public:
@@ -233,6 +236,7 @@ namespace rpwa {
 
 		// note: amplitudes which do not exist in higher ranks are NOT built!
 		void buildProdAmpArrays(const double*    inPar,
+		                        waveInfoType&    waveInfo,
 		                        prodAmpInfoType& prodAmpInfo,
 		                        const bool       withFlat = false) const;
 

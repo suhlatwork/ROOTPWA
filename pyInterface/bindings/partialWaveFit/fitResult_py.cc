@@ -20,6 +20,7 @@ namespace {
 	                      const double               massBinCenter,
 	                      const double               logLikelihood,
 	                      const int                  rank,
+	                      const bp::tuple&           pyWaveInfo,
 	                      const bp::tuple&           pyProdAmpInfo,
 	                      PyObject*                  pyFitParCovMatrix,
 	                      const rpwa::complexMatrix& normIntegral,
@@ -28,26 +29,56 @@ namespace {
 	                      const bool                 converged,
 	                      const bool                 hasHessian)
 	{
-		boost::tuples::tuple<bp::list, bp::list, bp::list> btProdAmpInfo;
-		if(not rpwa::py::convertBPTupleToTuple<bp::list, bp::list, bp::list>(pyProdAmpInfo, btProdAmpInfo)) {
+		boost::tuples::tuple<bp::list, bp::list> btWaveInfo;
+		if(not rpwa::py::convertBPTupleToTuple<bp::list, bp::list>(pyWaveInfo, btWaveInfo)) {
+			PyErr_SetString(PyExc_TypeError, "Got invalid input for prodAmpInfo when executing rpwa::fitResult::fill()");
+			bp::throw_error_already_set();
+		}
+		rpwa::fitResult::waveInfoType waveInfo;
+		const bp::list& pyWaveNames = boost::tuples::get<0>(btWaveInfo);
+		std::vector<std::string>& waveNames = boost::tuples::get<0>(waveInfo);
+		if(not rpwa::py::convertBPObjectToVector<std::string>(pyWaveNames, waveNames)) {
+			PyErr_SetString(PyExc_TypeError, "Got invalid input for waveNames when executing rpwa::fitResult::fill()");
+			bp::throw_error_already_set();
+		}
+		const bp::list& pyListWaveProdAmpIndices = boost::tuples::get<1>(btWaveInfo);
+		std::vector<std::vector<unsigned int> >& waveProdAmpIndices = boost::tuples::get<1>(waveInfo);
+		waveProdAmpIndices.resize(bp::len(pyListWaveProdAmpIndices));
+		for(int i = 0; i < bp::len(pyListWaveProdAmpIndices); ++i) {
+			if(not rpwa::py::convertBPObjectToVector<unsigned int>(pyListWaveProdAmpIndices[i], waveProdAmpIndices[i]))
+			{
+				std::stringstream strStr;
+				strStr<<"Could not convert element "<<i<<" when executing rpwa::fitResult::fill()";
+				PyErr_SetString(PyExc_TypeError, strStr.str().c_str());
+				bp::throw_error_already_set();
+			}
+		}
+		boost::tuples::tuple<bp::list, bp::list, bp::list, bp::list> btProdAmpInfo;
+		if(not rpwa::py::convertBPTupleToTuple<bp::list, bp::list, bp::list, bp::list>(pyProdAmpInfo, btProdAmpInfo)) {
 			PyErr_SetString(PyExc_TypeError, "Got invalid input for prodAmpInfo when executing rpwa::fitResult::fill()");
 			bp::throw_error_already_set();
 		}
 		rpwa::fitResult::prodAmpInfoType prodAmpInfo;
-		const bp::list& pyProdAmpNames = boost::tuples::get<0>(btProdAmpInfo);
-		std::vector<std::string>& prodAmpNames = boost::tuples::get<0>(prodAmpInfo);
-		if(not rpwa::py::convertBPObjectToVector<std::string>(pyProdAmpNames, prodAmpNames)) {
-			PyErr_SetString(PyExc_TypeError, "Got invalid input for prodAmpNames when executing rpwa::fitResult::fill()");
+		const bp::list& pyProdAmpWaveIndices = boost::tuples::get<0>(btProdAmpInfo);
+		std::vector<unsigned int>& prodAmpWaveIndices = boost::tuples::get<0>(prodAmpInfo);
+		if(not rpwa::py::convertBPObjectToVector<unsigned int>(pyProdAmpWaveIndices, prodAmpWaveIndices)) {
+			PyErr_SetString(PyExc_TypeError, "Got invalid input for prodAmpWaveIndices when executing rpwa::fitResult::fill()");
 			bp::throw_error_already_set();
 		}
-		const bp::list& pyProdAmps = boost::tuples::get<1>(btProdAmpInfo);
-		std::vector<std::complex<double> >& prodAmps = boost::tuples::get<1>(prodAmpInfo);
+		const bp::list& pyProdAmpRanks = boost::tuples::get<1>(btProdAmpInfo);
+		std::vector<unsigned int>& prodAmpRanks = boost::tuples::get<1>(prodAmpInfo);
+		if(not rpwa::py::convertBPObjectToVector<unsigned int>(pyProdAmpRanks, prodAmpRanks)) {
+			PyErr_SetString(PyExc_TypeError, "Got invalid input for prodAmpRanks when executing rpwa::fitResult::fill()");
+			bp::throw_error_already_set();
+		}
+		const bp::list& pyProdAmps = boost::tuples::get<2>(btProdAmpInfo);
+		std::vector<std::complex<double> >& prodAmps = boost::tuples::get<2>(prodAmpInfo);
 		if(not rpwa::py::convertBPObjectToVector<std::complex<double> >(pyProdAmps, prodAmps)) {
 			PyErr_SetString(PyExc_TypeError, "Got invalid input for prodAmps when executing rpwa::fitResult::fill()");
 			bp::throw_error_already_set();
 		}
-		const bp::list& pyListFitParCovMatrixIndices = boost::tuples::get<2>(btProdAmpInfo);
-		std::vector<std::pair<int, int> >& fitParCovMatrixIndices = boost::tuples::get<2>(prodAmpInfo);
+		const bp::list& pyListFitParCovMatrixIndices = boost::tuples::get<3>(btProdAmpInfo);
+		std::vector<std::pair<int, int> >& fitParCovMatrixIndices = boost::tuples::get<3>(prodAmpInfo);
 		fitParCovMatrixIndices.resize(bp::len(pyListFitParCovMatrixIndices));
 		for(int i = 0; i < bp::len(pyListFitParCovMatrixIndices); ++i) {
 			if(not rpwa::py::convertBPObjectToPair<int, int>(pyListFitParCovMatrixIndices[i], fitParCovMatrixIndices[i]))
@@ -68,7 +99,7 @@ namespace {
 			PyErr_SetString(PyExc_TypeError, "Got invalid input for phaseSpaceIntegral when executing rpwa::fitResult::fill()");
 			bp::throw_error_already_set();
 		}
-		self.fill(nmbEvents, normNmbEvents, massBinCenter, logLikelihood, rank, prodAmpInfo, *fitParCovMatrix,
+		self.fill(nmbEvents, normNmbEvents, massBinCenter, logLikelihood, rank, waveInfo, prodAmpInfo, *fitParCovMatrix,
 		          normIntegral, acceptedNormIntegral, phaseSpaceIntegral, converged, hasHessian);
 	}
 
@@ -302,10 +333,16 @@ namespace {
 		return bp::list(self.phaseSpaceIntegralVector());
 	}
 
+	bp::tuple fitResult_waveInfo(const rpwa::fitResult& self)
+	{
+		return bp::make_tuple(fitResult_waveNames(self),
+		                      fitResult_waveProdAmpIndices(self));
+	}
+
 	bp::tuple fitResult_prodAmpInfo(const rpwa::fitResult& self)
 	{
-		const rpwa::fitResult::prodAmpInfoType prodAmpInfo = self.prodAmpInfo();
-		return bp::make_tuple(fitResult_prodAmpNames(self),
+		return bp::make_tuple(fitResult_prodAmpWaveIndices(self),
+		                      fitResult_prodAmpRanks(self),
 		                      fitResult_prodAmps(self),
 		                      fitResult_fitParCovIndices(self));
 	}
@@ -401,6 +438,7 @@ void rpwa::py::exportFitResult() {
 		.def("intensity", &fitResult_intensity_3)
 		.def("intensityErr", &fitResult_intensityErr_3)
 
+		.def("waveInfo", &fitResult_waveInfo)
 		.def("prodAmpInfo", &fitResult_prodAmpInfo)
 		.def("prodAmps", &fitResult_prodAmps)
 		.def("prodAmpNames", &fitResult_prodAmpNames)

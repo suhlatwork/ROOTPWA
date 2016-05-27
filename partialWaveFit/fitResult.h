@@ -110,9 +110,12 @@ namespace rpwa {
 	public:
 
 #ifndef __CINT__
-		typedef boost::tuples::tuple<std::vector<std::string>,                             // tuple for production amplitude name,
-		                             std::vector<std::complex<double> >,                   //           value,
-		                             std::vector<std::pair<int, int> > > prodAmpInfoType;  //           and indices in covariance matrix
+		typedef boost::tuples::tuple<std::vector<std::string>,                                // tuple for wave name,
+		                             std::vector<std::vector<unsigned int> > > waveInfoType;  //           and indices of production amplitudes
+		typedef boost::tuples::tuple<std::vector<unsigned int>,                               // tuple for index of wave
+		                             std::vector<unsigned int>,                               //           rank,
+		                             std::vector<std::complex<double> >,                      //           value,
+		                             std::vector<std::pair<int, int> > > prodAmpInfoType;     //           and indices in covariance matrix for production amplitude
 #endif
 
 		fitResult();
@@ -128,6 +131,7 @@ namespace rpwa {
 		          const double               massBinCenter,         // center value of mass bin
 		          const double               logLikelihood,         // log(likelihood) at maximum
 		          const unsigned int         rank,                  // rank of fit
+		          const waveInfoType&        waveInfo,              // wave information
 		          const prodAmpInfoType&     prodAmpInfo,           // production amplitude information
 		          const TMatrixT<double>&    fitParCovMatrix,       // covariance matrix of fit parameters
 		          const rpwa::complexMatrix& normIntegral,          // normalization integral matrix
@@ -276,6 +280,7 @@ namespace rpwa {
 
 		// low level interface to make copying easier
 #ifndef __CINT__
+		inline waveInfoType                            waveInfo                  () const;
 		inline prodAmpInfoType                         prodAmpInfo               () const;
 #endif
 		const std::vector<TComplex>&                   prodAmps                  () const { return _prodAmps;               }
@@ -436,6 +441,16 @@ namespace rpwa {
 
 
 #ifndef __CINT__
+	// build the vector of wave information that can be used to call fill
+	inline
+	fitResult::waveInfoType
+	fitResult::waveInfo() const
+	{
+		std::vector<waveInfoType> waveInfo;
+		return boost::tuples::make_tuple(waveNames(), waveProdAmpIndices());;
+	}
+
+
 	// build the vector of production amplitude information that can be used to call fill
 	inline
 	fitResult::prodAmpInfoType
@@ -445,7 +460,7 @@ namespace rpwa {
 		for (unsigned int i = 0; i < nmbProdAmps(); ++i) {
 			prodAmps[i] = prodAmp(i);
 		}
-		return boost::tuples::make_tuple(prodAmpNames(), prodAmps, _fitParCovMatrixIndices);
+		return boost::tuples::make_tuple(prodAmpWaveIndices(), prodAmpRanks(), prodAmps, _fitParCovMatrixIndices);
 	}
 #endif
 

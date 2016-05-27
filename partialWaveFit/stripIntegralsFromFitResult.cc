@@ -140,6 +140,7 @@ main(int    argc,
 		const double                     massBinCenter = inResult->massBinCenter();
 		const double                     logLikelihood = inResult->logLikelihood();
 		const unsigned int               rank          = inResult->rank();
+		const fitResult::waveInfoType    waveInfo      = inResult->waveInfo();
 		const fitResult::prodAmpInfoType prodAmpInfo   = inResult->prodAmpInfo();
 
 		const complexMatrix              normIntegral(0, 0);
@@ -154,6 +155,7 @@ main(int    argc,
 		                massBinCenter,
 		                logLikelihood,
 		                rank,
+		                waveInfo,
 		                prodAmpInfo,
 		                stripCovarianceMatrix ? TMatrixT<double>(0, 0) : inResult->fitParCovMatrix(),
 		                normIntegral,
