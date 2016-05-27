@@ -338,13 +338,17 @@ main(int    argc,
 			}
 
 			for (unsigned int iProdAmp = 0; iProdAmp < result->nmbProdAmps(); ++iProdAmp) {
-				const string prodAmpName = result->prodAmpName(iProdAmp);
 				const string waveName    = result->waveNameForProdAmp(iProdAmp);
 				const int iWave          = result->waveIndex(waveName);
 
 				// extract rank and reflectivity from wave name
 				const int rank = result->rankOfProdAmp(iProdAmp);
 				const int refl = partialWaveFitHelper::getReflectivity(waveName);
+
+				// create production amplitude name
+				ostringstream prodAmpName;
+				prodAmpName << "V" << rank << "_" << waveName;
+
 				// read production amplitude
 				const complex<double> prodAmp = result->prodAmp(iProdAmp);
 				prodAmps[iSample].push_back(prodAmp);
@@ -352,7 +356,7 @@ main(int    argc,
 				if (iSample == 0) {
 					waveNames[iWave] = waveName;
 					waveIndex.push_back     (iWave);
-					prodAmpNames.push_back  (prodAmpName);
+					prodAmpNames.push_back  (prodAmpName.str());
 					reflectivities.push_back(refl);
 					ranks.push_back         (rank);
 					if (maxRank < rank)
@@ -360,7 +364,7 @@ main(int    argc,
 				}
 
 				if (debug)
-					printDebug << "read production amplitude '" << prodAmpName << "'"
+					printDebug << "read production amplitude '" << prodAmpName.str() << "'"
 					           << " [" << iProdAmp << "] = " << prodAmp
 					           << " for wave '" << waveName << "'; rank = " << rank
 					           << ", reflectivity = " << refl << endl;

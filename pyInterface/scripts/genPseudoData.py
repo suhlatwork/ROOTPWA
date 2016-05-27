@@ -128,8 +128,8 @@ if __name__ == "__main__":
 		reflectivities.append(pyRootPwa.core.partialWaveFitHelper.getReflectivity(waveName))
 		waveIndex = fitResult.waveIndex(waveName)
 
-		if not waveName == fitResult.prodAmpName(waveIndex)[3:]:
-			printErr("mismatch between waveName '" + waveName + "' and prodAmpName '" + fitResult.prodAmpName(waveIndex)[3:] + "'. Aborting...")
+		if not waveName == fitResult.waveNameForProdAmp(waveIndex):
+			printErr("mismatch between waveName '" + waveName + "' and prodAmpName '" + fitResult.waveNameForProdAmp(waveIndex) + "'. Aborting...")
 		prodAmps.append(fitResult.prodAmp(waveIndex))
 		(result, amplitude) = waveDescription.constructAmplitude()
 		if not result:

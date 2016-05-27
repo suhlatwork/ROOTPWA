@@ -155,18 +155,18 @@ namespace rpwa {
 		unsigned int        nmbWaves          () const { return _waveNames.size();  }  ///< returns number of waves in fit
 		unsigned int        nmbProdAmps       () const { return _prodAmps.size();   }  ///< returns number of production amplitudes
 
-		const std::string& waveName      (const unsigned int waveIndex)    const { return _waveNames[waveIndex];                              }  ///< returns name of wave at index
-		std::string        waveNameEsc   (const unsigned int waveIndex)    const { return escapeRegExpSpecialChar(waveName(waveIndex));       }  ///< returns name of wave at index with special regexp characters escaped
-		unsigned int       waveIndex     (const std::string& waveName)     const;                                                                ///< returns wave index corresponding to wave name
-		std::string        prodAmpName   (const unsigned int prodAmpIndex) const;                                                                ///< returns name of production amplitude at index
-		std::string        prodAmpNameEsc(const unsigned int prodAmpIndex) const { return escapeRegExpSpecialChar(prodAmpName(prodAmpIndex)); }  ///< returns name of production amplitude at index with special regexp characters escaped
-		unsigned int       prodAmpIndex  (const std::string& prodAmpName)  const;                                                                ///< returns production amplitude index corresponding to production amplitude name
+		const std::string& waveName   (const unsigned int waveIndex) const { return _waveNames[waveIndex];                        }  ///< returns name of wave at index
+		std::string        waveNameEsc(const unsigned int waveIndex) const { return escapeRegExpSpecialChar(waveName(waveIndex)); }  ///< returns name of wave at index with special regexp characters escaped
+		unsigned int       waveIndex  (const std::string& waveName ) const;                                                          ///< returns wave index corresponding to wave name
 
 		const std::string& waveNameForProdAmp (const unsigned int prodAmpIndex) const { return waveName(waveIndexForProdAmp(prodAmpIndex)); }
 		unsigned int       waveIndexForProdAmp(const unsigned int prodAmpIndex) const { return _prodAmpWaveIndices[prodAmpIndex];           }
 		unsigned int       rankOfProdAmp      (const unsigned int prodAmpIndex) const { return _prodAmpRanks[prodAmpIndex];                 }
 
-		double fitParameter(const std::string& parName) const;  ///< returns value of fit parameter with name
+		/// returns value of fit parameter
+		double fitParameter(const std::string& waveName,
+		                    const unsigned int rank,
+		                    const bool         realPart) const;
 
 		/// returns production amplitude value at index
 		std::complex<double>    prodAmp   (const unsigned int prodAmpIndex) const { return std::complex<double>(_prodAmps[prodAmpIndex].Re(), _prodAmps[prodAmpIndex].Im()); }
@@ -281,7 +281,6 @@ namespace rpwa {
 		inline prodAmpInfoType                         prodAmpInfo               () const;
 #endif
 		const std::vector<TComplex>&                   prodAmps                  () const { return _prodAmps;               }
-		inline std::vector<std::string>                prodAmpNames              () const;
 		const std::vector<unsigned int>&               prodAmpRanks              () const { return _prodAmpRanks;           }
 		const std::vector<unsigned int>&               prodAmpWaveIndices        () const { return _prodAmpWaveIndices;     }
 		const std::vector<std::string>&                waveNames                 () const { return _waveNames;              }
@@ -357,20 +356,6 @@ namespace rpwa {
 		const unsigned int index = std::find(_waveNames.begin(), _waveNames.end(), waveName) - _waveNames.begin();
 		if (index >= _waveNames.size()) {
 			printWarn << "could not find any wave named '" << waveName << "'." << std::endl;
-			throw;
-		}
-		return index;
-	}
-
-
-	inline
-	unsigned int
-	fitResult::prodAmpIndex(const std::string& prodAmpName) const
-	{
-		const std::vector<std::string> prodAmpNames = this->prodAmpNames();
-		const unsigned int index = std::find(prodAmpNames.begin(), prodAmpNames.end(), prodAmpName) - prodAmpNames.begin();
-		if (index >= prodAmpNames.size()) {
-			printWarn << "could not find any production amplitude named '" << prodAmpName << "'." << std::endl;
 			throw;
 		}
 		return index;
@@ -464,33 +449,6 @@ namespace rpwa {
 #endif
 
 
-	inline
-	std::string
-	fitResult::prodAmpName(const unsigned int i) const
-	{
-		std::ostringstream prodAmpName;
-		prodAmpName << "V";
-		if (waveNameForProdAmp(i) != "flat")
-			prodAmpName << _prodAmpRanks[i];
-		prodAmpName << "_" << waveNameForProdAmp(i);
-
-		return prodAmpName.str();
-	}
-
-
-	inline
-	std::vector<std::string>
-	fitResult::prodAmpNames() const
-	{
-		std::vector<std::string> prodAmpNames;
-
-		for (unsigned int i = 0; i<_prodAmps.size(); ++i)
-			prodAmpNames.push_back(prodAmpName(i));
-
-		return prodAmpNames;
-	}
-
-
 	// prints all production amplitudes and their covariance matrix
 	inline
 	std::ostream&
@@ -498,7 +456,7 @@ namespace rpwa {
 	{
 		out << "Production amplitudes:" << std::endl;
 		for (unsigned int i = 0; i < nmbProdAmps(); ++i) {
-			out << "    " << std::setw(3) << i << " " << prodAmpName(i) << " = " << prodAmp(i)
+			out << "    " << std::setw(3) << i << " rank-" << rankOfProdAmp(i) << " " << waveNameForProdAmp(i) << " = " << prodAmp(i)
 			    << ", cov = " << prodAmpCov(i) << std::endl;
 		}
 		return out;
@@ -533,8 +491,8 @@ namespace rpwa {
 		    << "    bin has a valid covariance matrix .... " << rpwa::yesNo(covMatrixValid()) << std::endl
 		    << "    fit has converged .................... " << rpwa::yesNo(converged())      << std::endl
 		    << "    Hessian matrix has been calculated ... " << rpwa::yesNo(hasHessian())     << std::endl;
-		printProdAmps(out);
 		printWaves(out);
+		printProdAmps(out);
 		out << "    covariance matrix:" << std::endl << _fitParCovMatrix << std::endl;
 		out << "    covariance matrix indices:" << std::endl;
 		for (unsigned int i = 0; i < _fitParCovMatrixIndices.size(); ++i)

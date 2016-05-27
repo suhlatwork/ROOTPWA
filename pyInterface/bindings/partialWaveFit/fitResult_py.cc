@@ -277,11 +277,6 @@ namespace {
 		return retval;
 	}
 
-	bp::list fitResult_prodAmpNames(const rpwa::fitResult& self)
-	{
-		return bp::list(self.prodAmpNames());
-	}
-
 	bp::list fitResult_prodAmpRanks(const rpwa::fitResult& self)
 	{
 		return bp::list(self.prodAmpRanks());
@@ -388,9 +383,6 @@ void rpwa::py::exportFitResult() {
 		)
 		.def("waveNameEsc", &rpwa::fitResult::waveNameEsc)
 		.def("waveIndex", &rpwa::fitResult::waveIndex)
-		.def("prodAmpName", &rpwa::fitResult::prodAmpName)
-		.def("prodAmpNameEsc", &rpwa::fitResult::prodAmpNameEsc)
-		.def("prodAmpIndex", &rpwa::fitResult::prodAmpIndex)
 		.def(
 			"waveNameForProdAmp"
 			, &rpwa::fitResult::waveNameForProdAmp
@@ -435,7 +427,6 @@ void rpwa::py::exportFitResult() {
 		.def("waveInfo", &fitResult_waveInfo)
 		.def("prodAmpInfo", &fitResult_prodAmpInfo)
 		.def("prodAmps", &fitResult_prodAmps)
-		.def("prodAmpNames", &fitResult_prodAmpNames)
 		.def("prodAmpRanks", &fitResult_prodAmpRanks)
 		.def("prodAmpWaveIndices", &fitResult_prodAmpWaveIndices)
 		.def("waveNames", &fitResult_waveNames)
