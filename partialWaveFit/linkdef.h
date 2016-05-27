@@ -72,6 +72,49 @@
     newObj->readMatrix();                                                                           \
 }                                                                                                   \
               }";
+#pragma read                                                                                        \
+        sourceClass="rpwa::fitResult"                                                               \
+        source="std::vector<std::string> _prodAmpNames; std::vector<std::string> _waveNames"        \
+        version="[-6]"                                                                              \
+        targetClass="rpwa::fitResult"                                                               \
+        target="_prodAmpRanks, _prodAmpWaveIndices, _waveProdAmpIndices"                            \
+        include="TMatrixD.h"                                                                        \
+        code="{                                                                                     \
+{                                                                                                   \
+    _prodAmpRanks.resize(onfile._prodAmpNames.size());                                              \
+    _prodAmpWaveIndices.resize(onfile._prodAmpNames.size());                                        \
+    _waveProdAmpIndices.assign(onfile._waveNames.size(), std::vector<unsigned int>());              \
+    std::vector<std::string> waveNames;                                                             \
+    for (size_t i = 0; i < onfile._prodAmpNames.size(); ++i) {                                      \
+        const std::string& prodAmpName = onfile._prodAmpNames[i];                                   \
+        if (prodAmpName.length() == 0 or prodAmpName[0] != 'V'                                      \
+            or prodAmpName.find('_') == std::string::npos) {                                        \
+            printErr << \"production amplitude name '\" << prodAmpName                              \
+                     << \"' does not follow the naming convention. \"                               \
+                     << \"cannot deduce corresponding wave name. Aborting...\" << std::endl;        \
+            throw;                                                                                  \
+        }                                                                                           \
+        const std::string waveName = prodAmpName.substr(prodAmpName.find('_') + 1);                 \
+        const int         rank     = atoi(&prodAmpName.c_str()[1]);                                 \
+        const size_t      waveIdx  = std::find(waveNames.begin(), waveNames.end(), waveName)        \
+                                     - waveNames.begin();                                           \
+        if (waveIdx == waveNames.size())                                                            \
+            waveNames.push_back(waveName);                                                          \
+        if (waveName != onfile._waveNames[waveIdx]) {                                               \
+            printErr << \"order of wave names differs from order extracted by production \"         \
+                     << \"amplitude names. Aborting...\" << std::endl;                              \
+            throw;                                                                                  \
+        }                                                                                           \
+        _prodAmpRanks[i]       = rank;                                                              \
+        _prodAmpWaveIndices[i] = waveIdx;                                                           \
+        _waveProdAmpIndices[waveIdx].push_back(i);                                                  \
+    }                                                                                               \
+    if (waveNames.size() != onfile._waveNames.size()) {                                             \
+        printErr << \"number of wave names differs from read fit result. Aborting...\" << std::endl;\
+        throw;                                                                                      \
+    }                                                                                               \
+}                                                                                                   \
+              }";
 
 
 #endif

@@ -256,9 +256,29 @@ namespace {
 		return bp::list(self.prodAmpNames());
 	}
 
+	bp::list fitResult_prodAmpRanks(const rpwa::fitResult& self)
+	{
+		return bp::list(self.prodAmpRanks());
+	}
+
+	bp::list fitResult_prodAmpWaveIndices(const rpwa::fitResult& self)
+	{
+		return bp::list(self.prodAmpWaveIndices());
+	}
+
 	bp::list fitResult_waveNames(const rpwa::fitResult& self)
 	{
 		return bp::list(self.waveNames());
+	}
+
+	bp::list fitResult_waveProdAmpIndices(const rpwa::fitResult& self)
+	{
+		bp::list retval;
+		const std::vector<std::vector<unsigned int> >& waveProdAmpIndices = self.waveProdAmpIndices();
+		for(unsigned int i = 0; i < waveProdAmpIndices.size(); ++i) {
+			retval.append(bp::list(waveProdAmpIndices[i]));
+		}
+		return retval;
 	}
 
 	PyObject* fitResult_fitParCovMatrix(const rpwa::fitResult self)
@@ -280,17 +300,6 @@ namespace {
 	bp::list fitResult_phaseSpaceIntegralVector(const rpwa::fitResult& self)
 	{
 		return bp::list(self.phaseSpaceIntegralVector());
-	}
-
-	bp::dict fitResult_normIntIndexMap(const rpwa::fitResult self)
-	{
-		bp::dict retval;
-		const std::map<int, int>& normIntIndexMap = self.normIntIndexMap();
-		for(std::map<int, int>::const_iterator it = normIntIndexMap.begin(); it != normIntIndexMap.end(); ++it)
-		{
-			retval[it->first] = it->second;
-		}
-		return retval;
 	}
 
 	bp::tuple fitResult_prodAmpInfo(const rpwa::fitResult& self)
@@ -346,16 +355,17 @@ void rpwa::py::exportFitResult() {
 			, bp::return_value_policy<bp::copy_const_reference>()
 		)
 		.def("waveNameEsc", &rpwa::fitResult::waveNameEsc)
+		.def("waveIndex", &rpwa::fitResult::waveIndex)
+		.def("prodAmpName", &rpwa::fitResult::prodAmpName)
+		.def("prodAmpNameEsc", &rpwa::fitResult::prodAmpNameEsc)
+		.def("prodAmpIndex", &rpwa::fitResult::prodAmpIndex)
 		.def(
-			"prodAmpName"
-			, &rpwa::fitResult::prodAmpName
+			"waveNameForProdAmp"
+			, &rpwa::fitResult::waveNameForProdAmp
 			, bp::return_value_policy<bp::copy_const_reference>()
 		)
-		.def("prodAmpNameEsc", &rpwa::fitResult::prodAmpNameEsc)
-		.def("waveNameForProdAmp", &rpwa::fitResult::waveNameForProdAmp)
+		.def("waveIndexForProdAmp", &rpwa::fitResult::waveIndexForProdAmp)
 		.def("rankOfProdAmp", &rpwa::fitResult::rankOfProdAmp)
-		.def("waveIndex", &rpwa::fitResult::waveIndex)
-		.def("prodAmpIndex", &rpwa::fitResult::prodAmpIndex)
 		.def("waveIndicesMatchingPattern", &fitResult_waveIndicesMatchingPattern)
 		.def("fitParameter", &rpwa::fitResult::fitParameter)
 		.def("prodAmp", &fitResult::prodAmp)
@@ -394,7 +404,10 @@ void rpwa::py::exportFitResult() {
 		.def("prodAmpInfo", &fitResult_prodAmpInfo)
 		.def("prodAmps", &fitResult_prodAmps)
 		.def("prodAmpNames", &fitResult_prodAmpNames)
+		.def("prodAmpRanks", &fitResult_prodAmpRanks)
+		.def("prodAmpWaveIndices", &fitResult_prodAmpWaveIndices)
 		.def("waveNames", &fitResult_waveNames)
+		.def("waveProdAmpIndices", &fitResult_waveProdAmpIndices)
 		.def("fitParCovMatrix", &fitResult_fitParCovMatrix)
 		.def("fitParCovIndices", &fitResult_fitParCovIndices)
 		.def(
@@ -408,7 +421,6 @@ void rpwa::py::exportFitResult() {
 			, bp::return_value_policy<bp::copy_const_reference>()
 		)
 		.def("phaseSpaceIntegralVector", &fitResult_phaseSpaceIntegralVector)
-		.def("normIntIndexMap", &fitResult_normIntIndexMap)
 		.def("printProdAmps", &fitResult_printProdAmps)
 		.def("printWaves", &fitResult_printWaves)
 

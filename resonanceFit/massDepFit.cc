@@ -1614,8 +1614,8 @@ rpwa::massDepFit::massDepFit::readFitResultMatrices(TTree* tree,
 			}
 			size_t idxWave = it->second;
 
-			int rank = fit->rankOfProdAmp(idxProdAmp);
-			// TODO: multiple ranks, in that case also check that rank is not -1
+			unsigned int rank = fit->rankOfProdAmp(idxProdAmp);
+			// TODO: multiple ranks
 			if(rank != 0) {
 				printErr << "can only handle rank-1 fit (production amplitude '" << fit->prodAmpName(idxProdAmp)
 				         << "' of wave '" << waveName << "' has rank " << rank << ")." << std::endl;
