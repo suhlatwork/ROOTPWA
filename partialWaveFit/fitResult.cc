@@ -94,14 +94,15 @@ fitResult::fitResult(const fitResult& result)
 	  _logLikelihood         (result.logLikelihood()),
 	  _rank                  (result.rank()),
 	  _prodAmps              (result.prodAmps()),
-	  _prodAmpNames          (result.prodAmpNames()),
+	  _prodAmpRanks          (result.prodAmpRanks()),
+	  _prodAmpWaveIndices    (result.prodAmpWaveIndices()),
 	  _waveNames             (result.waveNames()),
+	  _waveProdAmpIndices    (result.waveProdAmpIndices()),
 	  _covMatrixValid        (result.covMatrixValid()),
 	  _fitParCovMatrix       (result.fitParCovMatrix()),
 	  _fitParCovMatrixIndices(result.fitParCovIndices()),
 	  _normIntegral          (result.normIntegralMatrix()),
 	  _acceptedNormIntegral  (result.acceptedNormIntegralMatrix()),
-	  _normIntIndexMap       (result.normIntIndexMap()),
 	  _phaseSpaceIntegral    (result.phaseSpaceIntegralVector()),
 	  _converged             (result.converged()),
 	  _hasHessian            (result.hasHessian())
@@ -166,14 +167,15 @@ fitResult::reset()
 	_logLikelihood = 0;
 	_rank          = 0;
 	_prodAmps.clear();
-	_prodAmpNames.clear();
+	_prodAmpRanks.clear();
+	_prodAmpWaveIndices.clear();
 	_waveNames.clear();
+	_waveProdAmpIndices.clear();
 	_covMatrixValid = false;
 	_fitParCovMatrix.ResizeTo(0, 0);
 	_fitParCovMatrixIndices.clear();
 	_normIntegral.resizeTo(0, 0);
 	_acceptedNormIntegral.resizeTo(0, 0);
-	_normIntIndexMap.clear();
 	_phaseSpaceIntegral.clear();
 	_converged  = false;
 	_hasHessian = false;
@@ -205,8 +207,6 @@ fitResult::fill(const unsigned int      nmbEvents,             // number of even
 	for (unsigned int i = 0; i < prodAmps.size(); ++i)
 		_prodAmps[i] = TComplex(prodAmps[i].real(), prodAmps[i].imag());
 
-	_prodAmpNames           = boost::tuples::get<0>(prodAmpInfo);
-
 	// check whether there really is an error matrix
 	if (not (fitParCovMatrix.GetNrows() == 0) and not (fitParCovMatrix.GetNcols() == 0))
 		_covMatrixValid = true;
@@ -224,23 +224,64 @@ fitResult::fill(const unsigned int      nmbEvents,             // number of even
 
 	// get wave list from production amplitudes and fill map for
 	// production-amplitude indices to indices in normalization integral
-	for (unsigned int i = 0; i < _prodAmpNames.size(); ++i) {
-		const string waveName = waveNameForProdAmp(i);
+	_prodAmpRanks.clear();
+	_prodAmpWaveIndices.clear();
+	_waveNames.clear();
+	_waveProdAmpIndices.clear();
+	for (size_t i = 0; i < boost::tuples::get<0>(prodAmpInfo).size(); ++i) {
+		const string& prodAmpName = boost::tuples::get<0>(prodAmpInfo)[i];
+		if (prodAmpName.length() == 0 or prodAmpName[0] != 'V' or prodAmpName.find('_') == string::npos) {
+			printErr << "production amplitude name '" << prodAmpName << "' does not follow the naming convention. "
+			         << "cannot deduce corresponding wave name. Aborting..." << endl;
+			throw;
+		}
+		const string waveName = prodAmpName.substr(prodAmpName.find('_') + 1);
+		const int    rank     = atoi(&prodAmpName.c_str()[1]);
 		const size_t waveIdx  = find(_waveNames.begin(), _waveNames.end(), waveName) - _waveNames.begin();
-		if (waveIdx == _waveNames.size())
+		if (waveIdx == _waveNames.size()) {
 			_waveNames.push_back(waveName);
-		_normIntIndexMap[i] = waveIdx;
+			_waveProdAmpIndices.push_back(vector<unsigned int>());
+		}
+		_prodAmpRanks.push_back(rank);
+		_prodAmpWaveIndices.push_back(waveIdx);
+		_waveProdAmpIndices[waveIdx].push_back(i);
 	}
 
 	// check consistency
-	if (_prodAmps.size() != _prodAmpNames.size())
+	if (_prodAmps.size() != _prodAmpRanks.size())
 		printWarn << "number of production amplitudes (" << _prodAmps.size() << ") "
-		          << "does not match number of production amplitude names "
-		          << "(" << _prodAmpNames.size() << ")." << endl;
-	if (_waveNames.size() > _prodAmpNames.size())
+		          << "does not match number of ranks for production amplitudes "
+		          << "(" << _prodAmpRanks.size() << ")." << endl;
+	if (_prodAmps.size() != _prodAmpWaveIndices.size())
+		printWarn << "number of production amplitudes (" << _prodAmps.size() << ") "
+		          << "does not match number of wave indices for production amplitudes "
+		          << "(" << _prodAmpWaveIndices.size() << ")." << endl;
+	for (unsigned int i=0; i<_prodAmpWaveIndices.size(); ++i) {
+		if (_prodAmpWaveIndices[i] >= _waveNames.size())
+			printWarn << "wave index " << _prodAmpWaveIndices[i] << " associated with "
+			          << "production amplitude " << i << " does not exist." << endl;
+	}
+	if (_waveNames.size() > _prodAmps.size())
 		printWarn << "number of wave names (" << _waveNames.size() << ") "
-		          << "larger than number of production amplitude names "
-		          << "(" << _prodAmpNames.size() << ")." << endl;
+		          << "larger than number of production amplitudes "
+		          << "(" << _prodAmps.size() << ")." << endl;
+	{
+		unsigned int count = 0;
+		for (unsigned int i=0; i<_waveProdAmpIndices.size(); ++i) {
+			const vector<unsigned int>& prodAmpIndices = _waveProdAmpIndices[i];
+			count += prodAmpIndices.size();
+			for (unsigned int j=0; j<prodAmpIndices.size(); ++j) {
+				const unsigned int prodAmpIndex = prodAmpIndices[j];
+				if (_prodAmpWaveIndices[prodAmpIndex] != i)
+					printWarn << "incorrect mapping of production amplitude " << prodAmpIndex << ": "
+					          << " from wave index " << i << ", but pointing to " << _prodAmpWaveIndices[prodAmpIndex] << "." << endl;
+			}
+		}
+		if (_prodAmps.size() != count)
+			printWarn << "number of production amplitudes (" << _prodAmps.size() << ") "
+			          << "does not match number of production amplitudes mapped from waves "
+			          << "(" << count << ")." << endl;
+	}
 	if (_fitParCovMatrix.GetNrows() != _fitParCovMatrix.GetNcols())
 		printWarn << "covariance matrix is not a square matrix "
 		          << "(" << _fitParCovMatrix.GetNrows() << ", " << _fitParCovMatrix.GetNcols() << ")." << endl;
@@ -275,17 +316,6 @@ fitResult::fill(const unsigned int      nmbEvents,             // number of even
 		printWarn << "number of waves (" << _waveNames.size() << ") "
 		          << "does not match size of phase-space integral "
 		          << "(" << _phaseSpaceIntegral.size() << ")." << endl;
-	if (_prodAmps.size() != _normIntIndexMap.size())
-		printWarn << "number of production amplitudes (" << _prodAmps.size() << ") "
-		          << "does not match number of mappings from production amplitudes to indices in integrals "
-		          << "(" << _normIntIndexMap.size() << ")." << endl;
-	for (unsigned int i=0; i<_prodAmps.size(); ++i) {
-		if (_normIntIndexMap.count(i) != 1)
-			printWarn << "production amplitude at index " << i << " is not mapped to any index in integrals." << endl;
-		if (_normIntIndexMap[i] < 0 or _normIntIndexMap[i] >= (int)_waveNames.size())
-			printWarn << "production amplitude at index " << i << " is mapped to integrals "
-			             "at index " << _normIntIndexMap[i] <<", which does not exist." << endl;
-	}
 }
 
 
@@ -298,8 +328,10 @@ fitResult::fill(const fitResult& result)
 	_logLikelihood          = result.logLikelihood();
 	_rank                   = result.rank();
 	_prodAmps               = result.prodAmps();
-	_prodAmpNames           = result.prodAmpNames();
+	_prodAmpRanks           = result.prodAmpRanks();
+	_prodAmpWaveIndices     = result.prodAmpWaveIndices();
 	_waveNames              = result.waveNames();
+	_waveProdAmpIndices     = result.waveProdAmpIndices();
 	_covMatrixValid         = result.covMatrixValid();
 
 	const TMatrixT<double>& fitParCovMatrix = result.fitParCovMatrix();
@@ -309,7 +341,6 @@ fitResult::fill(const fitResult& result)
 	_fitParCovMatrixIndices = result.fitParCovIndices();
 	_normIntegral           = result.normIntegralMatrix();
 	_acceptedNormIntegral   = result.acceptedNormIntegralMatrix();
-	_normIntIndexMap        = result.normIntIndexMap();
 	_phaseSpaceIntegral     = result.phaseSpaceIntegralVector();
 	_converged              = result.converged();
 	_hasHessian             = result.hasHessian();
@@ -446,16 +477,16 @@ fitResult::evidenceComponents() const
 			if (thrProdAmpIndices.count(i) > 0)
 				continue;
 
-			const string       waveName = waveNameForProdAmp(i);
-			const unsigned int waveI    = waveIndex(waveName);
+			const string&      waveName = waveNameForProdAmp(i);
+			const unsigned int waveI    = waveIndexForProdAmp(i);
 			assert(thrWaveIndices.count(waveI) == 0);
 
 			// skip flat wave (handled below)
 			if (waveName == "flat")
 				continue;
 
-			const int rank = rankOfProdAmp(i);
-			assert(rank >= 0 && (unsigned int)rank < this->rank());
+			const unsigned int rank = rankOfProdAmp(i);
+			assert(rank < this->rank());
 
 			const int refl = partialWaveFitHelper::getReflectivity(waveName);
 			assert(refl == -1 || refl == +1);
@@ -575,31 +606,6 @@ fitResult::prodAmpCov(const vector<unsigned int>& prodAmpIndices) const
 				prodAmpCov[row][col] = _fitParCovMatrix(i, j);
 		}
 	return prodAmpCov;
-}
-
-
-/// finds wave indices for production amplitues A and B and returns the normalization integral of the two waves
-complex<double>
-fitResult::normIntegralForProdAmp(const unsigned int prodAmpIndexA,
-                                  const unsigned int prodAmpIndexB) const
-{
-	// treat special case of flat wave which has no normalization integral
-	const bool flatWaveA = (prodAmpName(prodAmpIndexA).find("flat") != string::npos);
-	const bool flatWaveB = (prodAmpName(prodAmpIndexB).find("flat") != string::npos);
-	if (flatWaveA and flatWaveB)
-		return 1;
-	else if (flatWaveA or flatWaveB)
-		return 0;
-	else {
-		map<int, int>::const_iterator indexA = _normIntIndexMap.find(prodAmpIndexA);
-		map<int, int>::const_iterator indexB = _normIntIndexMap.find(prodAmpIndexB);
-		if ((indexA == _normIntIndexMap.end()) or (indexB == _normIntIndexMap.end())) {
-			printWarn << "amplitude index " << prodAmpIndexA << " or " << prodAmpIndexB
-			          << " is out of bound. returning 0." << endl;
-			return 0;
-		}
-		return normIntegral(indexA->second, indexB->second);
-	}
 }
 
 
@@ -761,8 +767,8 @@ fitResult::coherenceErr(const unsigned int waveIndexA,
 	}
 
 	// get amplitude indices for waves A and B
-	const vector<unsigned int> prodAmpIndicesA = prodAmpIndicesForWave(waveIndexA);
-	const vector<unsigned int> prodAmpIndicesB = prodAmpIndicesForWave(waveIndexB);
+	const vector<unsigned int>& prodAmpIndicesA = prodAmpIndicesForWave(waveIndexA);
+	const vector<unsigned int>& prodAmpIndicesB = prodAmpIndicesForWave(waveIndexB);
 	if ((prodAmpIndicesA.size() == 0) or (prodAmpIndicesB.size() == 0))
 		return 0;
 
@@ -784,7 +790,7 @@ fitResult::coherenceErr(const unsigned int waveIndexA,
 	for (unsigned int i = 0; i < prodAmpIndicesA.size(); ++i) {
 		const unsigned int    prodAmpIndexA = prodAmpIndicesA[i];
 		const complex<double> prodAmpA      = prodAmp(prodAmpIndexA);
-		const int             prodAmpRankA  = rankOfProdAmp(prodAmpIndexA);
+		const unsigned int    prodAmpRankA  = rankOfProdAmp(prodAmpIndexA);
 		// find production amplitude of wave B with same rank
 		complex<double> prodAmpB = 0;
 		for (unsigned int j = 0; j < prodAmpIndicesB.size(); ++j) {
@@ -803,7 +809,7 @@ fitResult::coherenceErr(const unsigned int waveIndexA,
 	for (unsigned int i = 0; i < prodAmpIndicesB.size(); ++i) {
 		const unsigned int    prodAmpIndexB = prodAmpIndicesB[i];
 		const complex<double> prodAmpB      = prodAmp(prodAmpIndexB);
-		const int             prodAmpRankB  = rankOfProdAmp(prodAmpIndexB);
+		const unsigned int    prodAmpRankB  = rankOfProdAmp(prodAmpIndexB);
 		// find production amplitude of wave A with same rank
 		complex<double> prodAmpA = 0;
 		for (unsigned int j = 0; j < prodAmpIndicesA.size(); ++j) {
@@ -906,7 +912,7 @@ fitResult::intensityErr(const string& waveNamePattern) const
 
 	vector<unsigned int> prodAmpIndices;
 	for (unsigned int i = 0; i < nmbWaves; ++i) {
-		const vector<unsigned int> prodAmpIndicesWave = prodAmpIndicesForWave(waveIndices[i]);
+		const vector<unsigned int>& prodAmpIndicesWave = prodAmpIndicesForWave(waveIndices[i]);
 		prodAmpIndices.insert(prodAmpIndices.end(), prodAmpIndicesWave.begin(), prodAmpIndicesWave.end());
 	}
 	const unsigned int nmbAmps = prodAmpIndices.size();
@@ -917,15 +923,15 @@ fitResult::intensityErr(const string& waveNamePattern) const
 	for (unsigned int i = 0; i < nmbAmps; ++i) {
 		// build sub-Jacobian for each amplitude; intensity is real valued function, so J has only one row
 		// JA_ir = 2 * sum_j (A_jr Norm_ji)
-		complex<double>  ampNorm     = 0;  // sum_j (A_jr Norm_ji)
-		const int        currentRefl = partialWaveFitHelper::getReflectivity(waveNameForProdAmp(prodAmpIndices[i]));
-		const int        currentRank = rankOfProdAmp(prodAmpIndices[i]);
+		complex<double>    ampNorm     = 0;  // sum_j (A_jr Norm_ji)
+		const int          currentRefl = partialWaveFitHelper::getReflectivity(waveNameForProdAmp(prodAmpIndices[i]));
+		const unsigned int currentRank = rankOfProdAmp(prodAmpIndices[i]);
 		for (unsigned int j = 0; j < nmbAmps; ++j) {
 			if (partialWaveFitHelper::getReflectivity(waveNameForProdAmp(prodAmpIndices[j])) != currentRefl)
 				continue;
 			if (rankOfProdAmp(prodAmpIndices[j]) != currentRank)
 				continue;
-			ampNorm += prodAmp(prodAmpIndices[j]) * normIntegralForProdAmp(prodAmpIndices[j], prodAmpIndices[i]);  // order of indices is essential
+			ampNorm += prodAmp(prodAmpIndices[j]) * normIntegral(waveIndexForProdAmp(prodAmpIndices[j]), waveIndexForProdAmp(prodAmpIndices[i]));  // order of indices is essential
 		}
 		jacobian[0][2 * i    ] = ampNorm.real();
 		jacobian[0][2 * i + 1] = ampNorm.imag();
