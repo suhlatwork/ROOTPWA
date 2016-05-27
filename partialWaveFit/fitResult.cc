@@ -188,6 +188,7 @@ fitResult::fill(const unsigned int      nmbEvents,             // number of even
                 const double            massBinCenter,         // center value of mass bin
                 const double            logLikelihood,         // log(likelihood) at maximum
                 const unsigned int      rank,                  // rank of fit
+                const waveInfoType&     waveInfo,              // wave information
                 const prodAmpInfoType&  prodAmpInfo,           // production amplitude information
                 const TMatrixT<double>& fitParCovMatrix,       // covariance matrix of fit parameters
                 const complexMatrix&    normIntegral,          // normalization integral matrix
@@ -202,10 +203,15 @@ fitResult::fill(const unsigned int      nmbEvents,             // number of even
 	_logLikelihood          = logLikelihood;
 	_rank                   = rank;
 
-	const vector<complex<double> >& prodAmps = boost::tuples::get<1>(prodAmpInfo);
+	const vector<complex<double> >& prodAmps = boost::tuples::get<2>(prodAmpInfo);
 	_prodAmps.resize(prodAmps.size());
 	for (unsigned int i = 0; i < prodAmps.size(); ++i)
 		_prodAmps[i] = TComplex(prodAmps[i].real(), prodAmps[i].imag());
+
+	_prodAmpRanks           = boost::tuples::get<1>(prodAmpInfo);
+	_prodAmpWaveIndices     = boost::tuples::get<0>(prodAmpInfo);
+	_waveNames              = boost::tuples::get<0>(waveInfo);
+	_waveProdAmpIndices     = boost::tuples::get<1>(waveInfo);
 
 	// check whether there really is an error matrix
 	if (not (fitParCovMatrix.GetNrows() == 0) and not (fitParCovMatrix.GetNcols() == 0))
@@ -214,38 +220,13 @@ fitResult::fill(const unsigned int      nmbEvents,             // number of even
 		_covMatrixValid = false;
 	_fitParCovMatrix.ResizeTo(fitParCovMatrix.GetNrows(), fitParCovMatrix.GetNcols());
 	_fitParCovMatrix        = fitParCovMatrix;
-	_fitParCovMatrixIndices = boost::tuples::get<2>(prodAmpInfo);
+	_fitParCovMatrixIndices = boost::tuples::get<3>(prodAmpInfo);
 
 	_normIntegral           = normIntegral;
 	_acceptedNormIntegral   = acceptedNormIntegral;
 	_phaseSpaceIntegral     = phaseSpaceIntegral;
 	_converged              = converged;
 	_hasHessian             = hasHessian;
-
-	// get wave list from production amplitudes and fill map for
-	// production-amplitude indices to indices in normalization integral
-	_prodAmpRanks.clear();
-	_prodAmpWaveIndices.clear();
-	_waveNames.clear();
-	_waveProdAmpIndices.clear();
-	for (size_t i = 0; i < boost::tuples::get<0>(prodAmpInfo).size(); ++i) {
-		const string& prodAmpName = boost::tuples::get<0>(prodAmpInfo)[i];
-		if (prodAmpName.length() == 0 or prodAmpName[0] != 'V' or prodAmpName.find('_') == string::npos) {
-			printErr << "production amplitude name '" << prodAmpName << "' does not follow the naming convention. "
-			         << "cannot deduce corresponding wave name. Aborting..." << endl;
-			throw;
-		}
-		const string waveName = prodAmpName.substr(prodAmpName.find('_') + 1);
-		const int    rank     = atoi(&prodAmpName.c_str()[1]);
-		const size_t waveIdx  = find(_waveNames.begin(), _waveNames.end(), waveName) - _waveNames.begin();
-		if (waveIdx == _waveNames.size()) {
-			_waveNames.push_back(waveName);
-			_waveProdAmpIndices.push_back(vector<unsigned int>());
-		}
-		_prodAmpRanks.push_back(rank);
-		_prodAmpWaveIndices.push_back(waveIdx);
-		_waveProdAmpIndices[waveIdx].push_back(i);
-	}
 
 	// check consistency
 	if (_prodAmps.size() != _prodAmpRanks.size())

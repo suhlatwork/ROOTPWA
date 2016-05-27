@@ -122,6 +122,7 @@ if __name__ == "__main__":
 	               result.massBinCenter(),
 	               result.logLikelihood(),
 	               result.rank(),
+	               result.waveInfo(),
 	               result.prodAmpInfo(),
 	               covMatrix,
 	               result.normIntegralMatrix(),

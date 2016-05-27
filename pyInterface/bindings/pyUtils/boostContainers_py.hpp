@@ -77,6 +77,30 @@ namespace rpwa {
 			return true;
 		}
 
+
+		template<typename T1, typename T2, typename T3, typename T4>
+		bool convertBPTupleToTuple(const boost::python::tuple& pyTuple, boost::tuples::tuple<T1, T2, T3, T4>& tuple, const unsigned int index = 0) {
+			if (boost::python::len(pyTuple) != 4) {
+				printWarn << "tuple has wrong length, expected 4, got " << boost::python::len(pyTuple) << "." << std::endl;
+				return false;
+			}
+
+			boost::python::extract<T1> element(pyTuple[0]);
+			if (not element.check()) {
+				printWarn << "cannot convert tuple element at index " << index << " to desired type." << std::endl;
+				return false;
+			}
+			tuple.head = element();
+
+			boost::tuples::tuple<T2, T3, T4> tail;
+			if (not convertBPTupleToTuple<T2, T3, T4>(boost::python::tuple(pyTuple.slice(1, boost::python::len(pyTuple))), tail, index+1)) {
+				return false;
+			}
+			tuple.tail = tail;
+
+			return true;
+		}
+
 	}
 
 }

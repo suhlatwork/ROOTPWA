@@ -190,6 +190,7 @@ main(int    argc,
 		const double                     massBinCenter      = inResult->massBinCenter();
 		const double                     logLikelihood      = inResult->logLikelihood();
 		const unsigned int               rank               = inResult->rank();
+		const fitResult::waveInfoType    waveInfo           = inResult->waveInfo();
 		const fitResult::prodAmpInfoType prodAmpInfo        = inResult->prodAmpInfo();
 		const TMatrixT<double>&          fitParCovMatrix    = inResult->fitParCovMatrix();
 
@@ -270,6 +271,7 @@ main(int    argc,
 		                massBinCenter,
 		                logLikelihood,
 		                rank,
+		                waveInfo,
 		                prodAmpInfo,
 		                fitParCovMatrix,
 		                normIntegral,

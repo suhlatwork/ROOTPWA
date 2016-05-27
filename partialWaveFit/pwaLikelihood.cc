@@ -1558,13 +1558,30 @@ pwaLikelihood<complexT>::getIntegralMatrices(complexMatrix&  normMatrix,
 template<typename complexT>
 void
 pwaLikelihood<complexT>::buildProdAmpArrays(const double*    inPar,
+                                            waveInfoType&    waveInfo,
                                             prodAmpInfoType& prodAmpInfo,
                                             const bool       withFlat) const
 {
-	vector<string>&           prodAmpNames = bt::get<0>(prodAmpInfo);
-	vector<complex<double> >& prodAmps     = bt::get<1>(prodAmpInfo);
-	vector<pair<int, int> >&  parIndices   = bt::get<2>(prodAmpInfo);
-	prodAmpNames.clear();
+	vector<string>&                waveNames          = bt::get<0>(waveInfo);
+	vector<vector<unsigned int> >& waveProdAmpIndices = bt::get<1>(waveInfo);
+	waveNames.clear();
+	waveProdAmpIndices.clear();
+
+	multi_array<unsigned int, 2> waveIndices(extents[2][_nmbWavesReflMax]);
+	for (unsigned int iRefl = 0; iRefl < 2; ++iRefl) {
+		for (unsigned int iWave = 0; iWave < _nmbWavesRefl[iRefl]; ++iWave) {
+			waveIndices[iRefl][iWave] = waveNames.size();
+			waveNames.push_back(_waveNames[iRefl][iWave]);
+			waveProdAmpIndices.push_back(std::vector<unsigned int>());
+		}
+	}
+
+	vector<unsigned int>&     prodAmpWaveIndices = bt::get<0>(prodAmpInfo);
+	vector<unsigned int>&     prodAmpRanks       = bt::get<1>(prodAmpInfo);
+	vector<complex<double> >& prodAmps           = bt::get<2>(prodAmpInfo);
+	vector<pair<int, int> >&  parIndices         = bt::get<3>(prodAmpInfo);
+	prodAmpWaveIndices.clear();
+	prodAmpRanks.clear();
 	prodAmps.clear();
 	parIndices.clear();
 
@@ -1574,9 +1591,11 @@ pwaLikelihood<complexT>::buildProdAmpArrays(const double*    inPar,
 			for (unsigned int iWave = 0; iWave < _nmbWavesRefl[iRefl]; ++iWave) {
 				if (iWave < iRank)  // zero production amplitude
 					continue;
-				stringstream prodAmpName;
-				prodAmpName << "V" << iRank << "_" << _waveNames[iRefl][iWave];
-				prodAmpNames.push_back(prodAmpName.str());
+				const unsigned int waveIndex    = waveIndices[iRefl][iWave];
+				const unsigned int prodAmpIndex = prodAmps.size();
+				waveProdAmpIndices[waveIndex].push_back(prodAmpIndex);
+				prodAmpWaveIndices.push_back(waveIndex);
+				prodAmpRanks.push_back(iRank);
 				if (iWave == iRank) {  // real production amplitude
 					prodAmps.push_back(complex<double>(inPar[parIndex], 0));
 					parIndices.push_back(make_pair(parIndex, -1));
@@ -1590,7 +1609,12 @@ pwaLikelihood<complexT>::buildProdAmpArrays(const double*    inPar,
 		}
 	}
 	if (withFlat) {
-		prodAmpNames.push_back("V_flat");
+		const unsigned int waveIndex    = waveNames.size();
+		const unsigned int prodAmpIndex = prodAmps.size();
+		waveNames.push_back("flat");
+		waveProdAmpIndices.push_back(vector<unsigned int>(1, prodAmpIndex));
+		prodAmpWaveIndices.push_back(waveIndex);
+		prodAmpRanks.push_back(0);
 		prodAmps.push_back(complex<double>(inPar[parIndex], 0));
 		parIndices.push_back(make_pair(parIndex, -1));
 	}
