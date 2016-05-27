@@ -518,21 +518,20 @@ fitResult::evidenceComponents() const
 
 /// returns fit parameter value by parameter name
 double
-fitResult::fitParameter(const string& parName) const
+fitResult::fitParameter(const string&      waveName,
+                        const unsigned int rank,
+                        const bool         realPart) const
 {
-	// check if parameter corresponds to real or imaginary part of production amplitude
-	TString    name(parName);
-	const bool realPart = (name.Contains("RE") or name.Contains("flat"));
-	// find corresponding production amplitude
-	if (realPart)
-		name.ReplaceAll("_RE", "");
-	else
-		name.ReplaceAll("_IM", "");
-	const unsigned int index = prodAmpIndex(name.Data());
-	if (realPart)
-		return prodAmp(index).real();
-	else
-		return prodAmp(index).imag();
+	const unsigned int index = waveIndex(waveName);
+	for (size_t iRank = 0; iRank < prodAmpIndicesForWave(index).size(); ++iRank) {
+		if (rankOfProdAmp(prodAmpIndicesForWave(index)[iRank]) == rank) {
+			if (realPart)
+				return _prodAmps[prodAmpIndicesForWave(index)[iRank]].Re();
+			else
+				return _prodAmps[prodAmpIndicesForWave(index)[iRank]].Im();
+		}
+	}
+
 	return 0;  // not found
 }
 

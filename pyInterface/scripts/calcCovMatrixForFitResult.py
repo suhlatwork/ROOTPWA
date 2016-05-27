@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
 	pars = []
 	for parameter in likelihood.parameters():
-		pars.append(result.fitParameter(parameter.parName()))
+		pars.append(result.fitParameter(parameter.waveName(), parameter.rank(), parameter.realPart()))
 
 	# analytically calculate Hessian
 	hessian = likelihood.Hessian(pars)

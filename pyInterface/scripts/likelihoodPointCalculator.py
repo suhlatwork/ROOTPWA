@@ -92,6 +92,6 @@ if __name__ == "__main__":
 
 	pars = []
 	for parameter in likelihood.parameters():
-		pars.append(result.fitParameter(parameter.parName()))
+		pars.append(result.fitParameter(parameter.waveName(), parameter.rank(), parameter.realPart()))
 
 	pyRootPwa.utils.printSucc("likelihood is {: .15e}.".format(likelihood.DoEval(pars)))

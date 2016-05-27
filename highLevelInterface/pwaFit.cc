@@ -223,7 +223,10 @@ rpwa::hli::pwaFit(const pwaLikelihood<complex<double> >& L,
 			if (startValValid) {
 				// get parameter value from fitResult
 				assert(startFitResult);
-				startVal = startFitResult->fitParameter(parName);
+				const string&      waveName = L.parameter(i).waveName();
+				const unsigned int rank     = L.parameter(i).rank();
+				const bool         realPart = L.parameter(i).realPart();
+				startVal = startFitResult->fitParameter(waveName, rank, realPart);
 			} else {
 				startVal = (useFixedStartValues) ? defaultStartValue : random.Uniform(defaultStartValue, sqrtNmbEvts);
 				if(random.Rndm() > 0.5) {
