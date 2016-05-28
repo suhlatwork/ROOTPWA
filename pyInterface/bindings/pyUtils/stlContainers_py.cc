@@ -45,6 +45,10 @@ void rpwa::py::exportStlContainers() {
 	bp::class_<std::vector<std::string> >("__vector_string")
 		.def(bp::vector_indexing_suite<std::vector<std::string> >());
 
+	// std::vector<int>
+	bp::class_<std::vector<int> >("__vector_int")
+		.def(bp::vector_indexing_suite<std::vector<int> >());
+
 	// std::vector<unsigned int>
 	bp::class_<std::vector<unsigned int> >("__vector_unsigned_int")
 		.def(bp::vector_indexing_suite<std::vector<unsigned int> >());

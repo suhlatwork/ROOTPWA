@@ -81,6 +81,7 @@ namespace rpwa {
 		typedef std::map<std::string, std::pair<unsigned int, unsigned int>    > waveParamsType;        // map wave names to reflectivity and index in reflectivity
 		typedef boost::tuples::tuple<std::string, rpwa::waveDescription, double> waveDescThresType;     // tuple for wave name, wave description and threshold
 		typedef boost::tuples::tuple<std::vector<std::string>,                                          // tuple for wave name,
+		                             std::vector<int>,                                                  //           reflectivity,
 		                             std::vector<std::vector<unsigned int> > >   waveInfoType;          //           and indices of production amplitudes
 		typedef boost::tuples::tuple<std::vector<unsigned int>,                                         // tuple for index of wave
 		                             std::vector<unsigned int>,                                         //           rank,

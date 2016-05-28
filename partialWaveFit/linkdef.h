@@ -77,13 +77,14 @@
         source="std::vector<std::string> _prodAmpNames; std::vector<std::string> _waveNames"        \
         version="[-6]"                                                                              \
         targetClass="rpwa::fitResult"                                                               \
-        target="_prodAmpRanks, _prodAmpWaveIndices, _waveProdAmpIndices"                            \
-        include="TMatrixD.h"                                                                        \
+        target="_prodAmpRanks, _prodAmpWaveIndices, _waveProdAmpIndices, _waveRefls"                \
+        include="TMatrixD.h, partialWaveFitHelper.h"                                                \
         code="{                                                                                     \
 {                                                                                                   \
     _prodAmpRanks.resize(onfile._prodAmpNames.size());                                              \
     _prodAmpWaveIndices.resize(onfile._prodAmpNames.size());                                        \
     _waveProdAmpIndices.assign(onfile._waveNames.size(), std::vector<unsigned int>());              \
+    _waveRefls.resize(onfile._waveNames.size());                                                    \
     std::vector<std::string> waveNames;                                                             \
     for (size_t i = 0; i < onfile._prodAmpNames.size(); ++i) {                                      \
         const std::string& prodAmpName = onfile._prodAmpNames[i];                                   \
@@ -96,6 +97,7 @@
         }                                                                                           \
         const std::string waveName = prodAmpName.substr(prodAmpName.find('_') + 1);                 \
         const int         rank     = atoi(&prodAmpName.c_str()[1]);                                 \
+        const int         refl     = rpwa::partialWaveFitHelper::getReflectivity(waveName);         \
         const size_t      waveIdx  = std::find(waveNames.begin(), waveNames.end(), waveName)        \
                                      - waveNames.begin();                                           \
         if (waveIdx == waveNames.size())                                                            \
@@ -108,6 +110,7 @@
         _prodAmpRanks[i]       = rank;                                                              \
         _prodAmpWaveIndices[i] = waveIdx;                                                           \
         _waveProdAmpIndices[waveIdx].push_back(i);                                                  \
+        _waveRefls[waveIdx]    = refl;                                                              \
     }                                                                                               \
     if (waveNames.size() != onfile._waveNames.size()) {                                             \
         printErr << \"number of wave names differs from read fit result. Aborting...\" << std::endl;\

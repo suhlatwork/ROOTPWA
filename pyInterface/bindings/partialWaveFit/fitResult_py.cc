@@ -29,7 +29,7 @@ namespace {
 	                      const bool                 converged,
 	                      const bool                 hasHessian)
 	{
-		boost::tuples::tuple<bp::list, bp::list> btWaveInfo;
+		boost::tuples::tuple<bp::list, bp::list, bp::list> btWaveInfo;
 		if(not rpwa::py::convertBPTupleToTuple<bp::list, bp::list>(pyWaveInfo, btWaveInfo)) {
 			PyErr_SetString(PyExc_TypeError, "Got invalid input for prodAmpInfo when executing rpwa::fitResult::fill()");
 			bp::throw_error_already_set();
@@ -41,8 +41,14 @@ namespace {
 			PyErr_SetString(PyExc_TypeError, "Got invalid input for waveNames when executing rpwa::fitResult::fill()");
 			bp::throw_error_already_set();
 		}
-		const bp::list& pyListWaveProdAmpIndices = boost::tuples::get<1>(btWaveInfo);
-		std::vector<std::vector<unsigned int> >& waveProdAmpIndices = boost::tuples::get<1>(waveInfo);
+		const bp::list& pyWaveRefls = boost::tuples::get<1>(btWaveInfo);
+		std::vector<int>& waveRefls = boost::tuples::get<1>(waveInfo);
+		if(not rpwa::py::convertBPObjectToVector<int>(pyWaveRefls, waveRefls)) {
+			PyErr_SetString(PyExc_TypeError, "Got invalid input for waveRefls when executing rpwa::fitResult::fill()");
+			bp::throw_error_already_set();
+		}
+		const bp::list& pyListWaveProdAmpIndices = boost::tuples::get<2>(btWaveInfo);
+		std::vector<std::vector<unsigned int> >& waveProdAmpIndices = boost::tuples::get<2>(waveInfo);
 		waveProdAmpIndices.resize(bp::len(pyListWaveProdAmpIndices));
 		for(int i = 0; i < bp::len(pyListWaveProdAmpIndices); ++i) {
 			if(not rpwa::py::convertBPObjectToVector<unsigned int>(pyListWaveProdAmpIndices[i], waveProdAmpIndices[i]))
@@ -297,6 +303,11 @@ namespace {
 		return bp::list(self.waveNames());
 	}
 
+	bp::list fitResult_waveRefls(const rpwa::fitResult& self)
+	{
+		return bp::list(self.waveRefls());
+	}
+
 	bp::list fitResult_waveProdAmpIndices(const rpwa::fitResult& self)
 	{
 		bp::list retval;
@@ -331,6 +342,7 @@ namespace {
 	bp::tuple fitResult_waveInfo(const rpwa::fitResult& self)
 	{
 		return bp::make_tuple(fitResult_waveNames(self),
+		                      fitResult_waveRefls(self),
 		                      fitResult_waveProdAmpIndices(self));
 	}
 
@@ -387,6 +399,7 @@ void rpwa::py::exportFitResult() {
 			, bp::return_value_policy<bp::copy_const_reference>()
 		)
 		.def("waveNameEsc", &rpwa::fitResult::waveNameEsc)
+		.def("waveRefl", &rpwa::fitResult::waveRefl)
 		.def("waveIndex", &rpwa::fitResult::waveIndex)
 		.def(
 			"waveNameForProdAmp"
@@ -395,6 +408,7 @@ void rpwa::py::exportFitResult() {
 		)
 		.def("waveIndexForProdAmp", &rpwa::fitResult::waveIndexForProdAmp)
 		.def("rankOfProdAmp", &rpwa::fitResult::rankOfProdAmp)
+		.def("reflOfProdAmp", &rpwa::fitResult::reflOfProdAmp)
 		.def("waveIndicesMatchingPattern", &fitResult_waveIndicesMatchingPattern)
 		.def("fitParameter", &rpwa::fitResult::fitParameter)
 		.def("prodAmp", &fitResult::prodAmp)
@@ -436,6 +450,7 @@ void rpwa::py::exportFitResult() {
 		.def("prodAmpRanks", &fitResult_prodAmpRanks)
 		.def("prodAmpWaveIndices", &fitResult_prodAmpWaveIndices)
 		.def("waveNames", &fitResult_waveNames)
+		.def("waveRefls", &fitResult_waveRefls)
 		.def("waveProdAmpIndices", &fitResult_waveProdAmpIndices)
 		.def("fitParCovMatrix", &fitResult_fitParCovMatrix)
 		.def("fitParCovIndices", &fitResult_fitParCovIndices)
