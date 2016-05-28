@@ -159,8 +159,8 @@ namespace rpwa {
 		inline std::string waveNameForProdAmp(const unsigned int prodAmpIndex) const;
 		inline int         rankOfProdAmp     (const unsigned int prodAmpIndex) const;
 
-		int waveIndex   (const std::string& waveName   ) const;  ///< returns wave index corresponding to wave name
-		int prodAmpIndex(const std::string& prodAmpName) const;  ///< returns production amplitude index corresponding to production amplitude name
+		unsigned int waveIndex   (const std::string& waveName   ) const;  ///< returns wave index corresponding to wave name
+		unsigned int prodAmpIndex(const std::string& prodAmpName) const;  ///< returns production amplitude index corresponding to production amplitude name
 
 		/// returns indices of waves that match the regular expression
 		inline std::vector<unsigned int> waveIndicesMatchingPattern(const std::string& waveNamePattern) const;
@@ -348,6 +348,32 @@ namespace rpwa {
 		ClassDef(fitResult, 6)
 
 	};  // class fitResult
+
+
+	inline
+	unsigned int
+	fitResult::waveIndex(const std::string& waveName) const
+	{
+		const unsigned int index = std::find(_waveNames.begin(), _waveNames.end(), waveName) - _waveNames.begin();
+		if (index >= _waveNames.size()) {
+			printWarn << "could not find any wave named '" << waveName << "'." << std::endl;
+			throw;
+		}
+		return index;
+	}
+
+
+	inline
+	unsigned int
+	fitResult::prodAmpIndex(const std::string& prodAmpName) const
+	{
+		const unsigned int index = std::find(_prodAmpNames.begin(), _prodAmpNames.end(), prodAmpName) - _prodAmpNames.begin();
+		if (index >= _prodAmpNames.size()) {
+			printWarn << "could not find any production amplitude named '" << prodAmpName << "'." << std::endl;
+			throw;
+		}
+		return index;
+	}
 
 
 	/// returns covariance matrix for a single production amplitude

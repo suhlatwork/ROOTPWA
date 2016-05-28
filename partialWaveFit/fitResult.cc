@@ -357,8 +357,7 @@ fitResult::evidenceComponents() const
 	set<unsigned int> thrWaveIndices;
 	for (set<unsigned int>::const_iterator it = thrProdAmpIndices.begin();
 	     it != thrProdAmpIndices.end(); ++it) {
-		const int index = waveIndex(waveNameForProdAmp(*it));
-		assert(index > 0);
+		const unsigned int index = waveIndex(waveNameForProdAmp(*it));
 		thrWaveIndices.insert(index);
 	}
 
@@ -425,7 +424,7 @@ fitResult::evidenceComponents() const
 		// parameter volume prior to observing the data
 		if (acceptedNormIntegralMatrix().nCols() != 0 && acceptedNormIntegralMatrix().nRows() != 0) {
 			// keep list of required waves for each reflectivity and rank
-			boost::multi_array<vector<int>, 2> waves(boost::extents[2][rank()]);
+			boost::multi_array<vector<unsigned int>, 2> waves(boost::extents[2][rank()]);
 
 			// loop over production amplitudes and extract combinations of
 			// rank and reflectivity
@@ -434,9 +433,8 @@ fitResult::evidenceComponents() const
 				if (thrProdAmpIndices.count(i) > 0)
 					continue;
 
-				const string waveName = string(waveNameForProdAmp(i));
-				const int waveI = waveIndex(waveName);
-				assert(waveI >= 0);
+				const string       waveName = waveNameForProdAmp(i);
+				const unsigned int waveI    = waveIndex(waveName);
 				assert(thrWaveIndices.count(waveI) == 0);
 
 				// skip flat wave (handled below)
@@ -470,8 +468,7 @@ fitResult::evidenceComponents() const
 			}
 
 			// parameter volume for flat wave correlates with overall acceptance
-			const int idxFlat = waveIndex("flat");
-			assert(idxFlat != -1);
+			const unsigned int idxFlat = waveIndex("flat");
 			logDetAcc += TMath::Log(acceptedNormIntegral(idxFlat, idxFlat).real());
 
 			// n-Sphere:
@@ -511,36 +508,6 @@ fitResult::evidenceComponents() const
 }
 
 
-int
-fitResult::waveIndex(const string& waveName) const
-{
-	int index = -1;
-	for (unsigned int i = 0; i < nmbWaves(); ++i)
-		if (waveName == this->waveName(i)) {
-			index = i;
-			break;  // assumes that waves have unique names
-		}
-	if (index == -1)
-		printWarn << "could not find any wave named '" << waveName << "'." << endl;
-	return index;
-}
-
-
-int
-fitResult::prodAmpIndex(const string& prodAmpName) const
-{
-	int index = -1;
-	for (unsigned int i = 0; i < nmbProdAmps(); ++i)
-		if (prodAmpName == _prodAmpNames[i]) {
-			index = i;
-			break;  // assumes that production amplitudes have unique names
-		}
-	if (index == -1)
-		printWarn << "could not find any production amplitude named '" << prodAmpName << "'." << endl;
-	return index;
-}
-
-
 /// returns fit parameter value by parameter name
 double
 fitResult::fitParameter(const string& parName) const
@@ -553,13 +520,11 @@ fitResult::fitParameter(const string& parName) const
 		name.ReplaceAll("_RE", "");
 	else
 		name.ReplaceAll("_IM", "");
-	const int index = prodAmpIndex(name.Data());
-	if (index >= 0) {
-		if (realPart)
-			return prodAmp(index).real();
-		else
-			return prodAmp(index).imag();
-	}
+	const unsigned int index = prodAmpIndex(name.Data());
+	if (realPart)
+		return prodAmp(index).real();
+	else
+		return prodAmp(index).imag();
 	return 0;  // not found
 }
 
