@@ -97,6 +97,7 @@ fitResult::fitResult(const fitResult& result)
 	  _prodAmpRanks          (result.prodAmpRanks()),
 	  _prodAmpWaveIndices    (result.prodAmpWaveIndices()),
 	  _waveNames             (result.waveNames()),
+	  _waveRefls             (result.waveRefls()),
 	  _waveProdAmpIndices    (result.waveProdAmpIndices()),
 	  _covMatrixValid        (result.covMatrixValid()),
 	  _fitParCovMatrix       (result.fitParCovMatrix()),
@@ -170,6 +171,7 @@ fitResult::reset()
 	_prodAmpRanks.clear();
 	_prodAmpWaveIndices.clear();
 	_waveNames.clear();
+	_waveRefls.clear();
 	_waveProdAmpIndices.clear();
 	_covMatrixValid = false;
 	_fitParCovMatrix.ResizeTo(0, 0);
@@ -211,7 +213,8 @@ fitResult::fill(const unsigned int      nmbEvents,             // number of even
 	_prodAmpRanks           = boost::tuples::get<1>(prodAmpInfo);
 	_prodAmpWaveIndices     = boost::tuples::get<0>(prodAmpInfo);
 	_waveNames              = boost::tuples::get<0>(waveInfo);
-	_waveProdAmpIndices     = boost::tuples::get<1>(waveInfo);
+	_waveRefls              = boost::tuples::get<1>(waveInfo);
+	_waveProdAmpIndices     = boost::tuples::get<2>(waveInfo);
 
 	// check whether there really is an error matrix
 	if (not (fitParCovMatrix.GetNrows() == 0) and not (fitParCovMatrix.GetNcols() == 0))
@@ -312,6 +315,7 @@ fitResult::fill(const fitResult& result)
 	_prodAmpRanks           = result.prodAmpRanks();
 	_prodAmpWaveIndices     = result.prodAmpWaveIndices();
 	_waveNames              = result.waveNames();
+	_waveRefls              = result.waveRefls();
 	_waveProdAmpIndices     = result.waveProdAmpIndices();
 	_covMatrixValid         = result.covMatrixValid();
 
@@ -469,7 +473,7 @@ fitResult::evidenceComponents() const
 			const unsigned int rank = rankOfProdAmp(i);
 			assert(rank < this->rank());
 
-			const int refl = partialWaveFitHelper::getReflectivity(waveName);
+			const int refl = reflOfProdAmp(i);
 			assert(refl == -1 || refl == +1);
 
 			if (refl > 0)
@@ -598,8 +602,7 @@ fitResult::spinDensityMatrixElem(const unsigned int waveIndexA,
 {
 	// spin density matrix element is 0 if the two waves have different
 	// reflectivities
-	if (partialWaveFitHelper::getReflectivity(waveName(waveIndexA))
-	    != partialWaveFitHelper::getReflectivity(waveName(waveIndexB))) {
+	if (waveRefl(waveIndexA) != waveRefl(waveIndexB)) {
 		return 0;
 	}
 
@@ -634,8 +637,7 @@ fitResult::spinDensityMatrixElemCov(const unsigned int waveIndexA,
 
 	// spin density matrix element is 0 if the two waves have different
 	// reflectivities
-	if (partialWaveFitHelper::getReflectivity(waveName(waveIndexA))
-	    != partialWaveFitHelper::getReflectivity(waveName(waveIndexB))) {
+	if (waveRefl(waveIndexA) != waveRefl(waveIndexB)) {
 		const TMatrixT<double> spinDensCov(2, 2);
 		return spinDensCov;
 	}
@@ -904,10 +906,10 @@ fitResult::intensityErr(const string& waveNamePattern) const
 		// build sub-Jacobian for each amplitude; intensity is real valued function, so J has only one row
 		// JA_ir = 2 * sum_j (A_jr Norm_ji)
 		complex<double>    ampNorm     = 0;  // sum_j (A_jr Norm_ji)
-		const int          currentRefl = partialWaveFitHelper::getReflectivity(waveNameForProdAmp(prodAmpIndices[i]));
+		const int          currentRefl = reflOfProdAmp(prodAmpIndices[i]);
 		const unsigned int currentRank = rankOfProdAmp(prodAmpIndices[i]);
 		for (unsigned int j = 0; j < nmbAmps; ++j) {
-			if (partialWaveFitHelper::getReflectivity(waveNameForProdAmp(prodAmpIndices[j])) != currentRefl)
+			if (reflOfProdAmp(prodAmpIndices[j]) != currentRefl)
 				continue;
 			if (rankOfProdAmp(prodAmpIndices[j]) != currentRank)
 				continue;

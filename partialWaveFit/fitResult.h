@@ -56,7 +56,6 @@
 
 #include "complexMatrix.h"
 #include "conversionUtils.hpp"
-#include "partialWaveFitHelper.h"
 #include "reportingUtils.hpp"
 #include "reportingUtilsRoot.hpp"
 
@@ -111,6 +110,7 @@ namespace rpwa {
 
 #ifndef __CINT__
 		typedef boost::tuples::tuple<std::vector<std::string>,                                // tuple for wave name,
+		                             std::vector<int>,                                        //           reflectivity,
 		                             std::vector<std::vector<unsigned int> > > waveInfoType;  //           and indices of production amplitudes
 		typedef boost::tuples::tuple<std::vector<unsigned int>,                               // tuple for index of wave
 		                             std::vector<unsigned int>,                               //           rank,
@@ -157,11 +157,13 @@ namespace rpwa {
 
 		const std::string& waveName   (const unsigned int waveIndex) const { return _waveNames[waveIndex];                        }  ///< returns name of wave at index
 		std::string        waveNameEsc(const unsigned int waveIndex) const { return escapeRegExpSpecialChar(waveName(waveIndex)); }  ///< returns name of wave at index with special regexp characters escaped
+		int                waveRefl   (const unsigned int waveIndex) const { return _waveRefls[waveIndex];                        }  ///< returns reflectivity of wave at index
 		unsigned int       waveIndex  (const std::string& waveName ) const;                                                          ///< returns wave index corresponding to wave name
 
 		const std::string& waveNameForProdAmp (const unsigned int prodAmpIndex) const { return waveName(waveIndexForProdAmp(prodAmpIndex)); }
 		unsigned int       waveIndexForProdAmp(const unsigned int prodAmpIndex) const { return _prodAmpWaveIndices[prodAmpIndex];           }
 		unsigned int       rankOfProdAmp      (const unsigned int prodAmpIndex) const { return _prodAmpRanks[prodAmpIndex];                 }
+		int                reflOfProdAmp      (const unsigned int prodAmpIndex) const { return waveRefl(waveIndexForProdAmp(prodAmpIndex)); }
 
 		/// returns value of fit parameter
 		double fitParameter(const std::string& waveName,
@@ -284,6 +286,7 @@ namespace rpwa {
 		const std::vector<unsigned int>&               prodAmpRanks              () const { return _prodAmpRanks;           }
 		const std::vector<unsigned int>&               prodAmpWaveIndices        () const { return _prodAmpWaveIndices;     }
 		const std::vector<std::string>&                waveNames                 () const { return _waveNames;              }
+		const std::vector<int>&                        waveRefls                 () const { return _waveRefls;              }
 		const std::vector<std::vector<unsigned int> >& waveProdAmpIndices        () const { return _waveProdAmpIndices;     }
 		const TMatrixT<double>&                        fitParCovMatrix           () const { return _fitParCovMatrix;        }
 		const std::vector<std::pair<int, int> >&       fitParCovIndices          () const { return _fitParCovMatrixIndices; }
@@ -332,6 +335,7 @@ namespace rpwa {
 		std::vector<unsigned int>               _prodAmpRanks;              ///< ranks of production amplitudes
 		std::vector<unsigned int>               _prodAmpWaveIndices;        ///< indices to corresponding waves of production amplitudes
 		std::vector<std::string>                _waveNames;                 ///< names of waves used in fit
+		std::vector<int>                        _waveRefls;                 ///< reflectivities of waves used in fit
 		std::vector<std::vector<unsigned int> > _waveProdAmpIndices;        ///< production amplitudes belonging to a wave
 		bool                                    _covMatrixValid;            ///< indicates whether bin has a valid covariance matrix
 		TMatrixT<double>                        _fitParCovMatrix;           ///< covariance matrix of fit parameters
@@ -431,7 +435,7 @@ namespace rpwa {
 	fitResult::waveInfo() const
 	{
 		std::vector<waveInfoType> waveInfo;
-		return boost::tuples::make_tuple(waveNames(), waveProdAmpIndices());;
+		return boost::tuples::make_tuple(waveNames(), waveRefls(), waveProdAmpIndices());;
 	}
 
 
@@ -531,8 +535,7 @@ namespace rpwa {
 	{
 		std::vector<std::pair<unsigned int, unsigned int> > prodAmpIndexPairs;
 		// return empty vector if the two waves have different reflectivities
-		if (rpwa::partialWaveFitHelper::getReflectivity(waveName(waveIndexA))
-		    != rpwa::partialWaveFitHelper::getReflectivity(waveName(waveIndexB))) {
+		if (waveRefl(waveIndexA) != waveRefl(waveIndexB)) {
 			return prodAmpIndexPairs;
 		}
 
