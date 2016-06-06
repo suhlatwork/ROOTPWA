@@ -372,13 +372,11 @@ rpwa::hli::pwaFit(const pwaLikelihood<complex<double> >& L,
 #endif
 
 	// get data structures to construct fitResult
-	const unsigned int nmbWaves = L.nmbWaves() + 1;   // flat wave is not included in L.nmbWaves()
-	vector<complex<double> > prodAmps;                // production amplitudes
-	vector<string>           prodAmpNames;            // names of production amplitudes used in fit
-	vector<pair<int,int> >   fitParCovMatrixIndices;  // indices of fit parameters for real and imaginary part in covariance matrix matrix
-	L.buildProdAmpArrays(correctParams.data(), prodAmps, fitParCovMatrixIndices, prodAmpNames, true);
-	complexMatrix normIntegral(0, 0);                 // normalization integral over full phase space without acceptance
-	complexMatrix accIntegral (0, 0);                 // normalization integral over full phase space with acceptance
+	const unsigned int nmbWaves = L.nmbWaves() + 1;                // flat wave is not included in L.nmbWaves()
+	pwaLikelihood<complex<double> >::prodAmpInfoType prodAmpInfo;  // production amplitude information
+	L.buildProdAmpArrays(correctParams.data(), prodAmpInfo, true);
+	complexMatrix normIntegral(0, 0);                              // normalization integral over full phase space without acceptance
+	complexMatrix accIntegral (0, 0);                              // normalization integral over full phase space with acceptance
 	vector<double> phaseSpaceIntegral;
 	if (not saveSpace) {
 		L.getIntegralMatrices(normIntegral, accIntegral, phaseSpaceIntegral, true);
@@ -386,11 +384,9 @@ rpwa::hli::pwaFit(const pwaLikelihood<complex<double> >& L,
 	const int normNmbEvents = 1;  // number of events to normalize to
 
 	cout << "filling fitResult:" << endl
-	     << "    number of fit parameters ............... " << nmbPar                        << endl
-	     << "    number of production amplitudes ........ " << prodAmps.size()               << endl
-	     << "    number of production amplitude names ... " << prodAmpNames.size()           << endl
-	     << "    number of wave names ................... " << nmbWaves                      << endl
-	     << "    number of cov. matrix indices .......... " << fitParCovMatrixIndices.size() << endl
+	     << "    number of wave names ................... " << nmbWaves                                  << endl
+	     << "    number of production amplitudes ........ " << boost::tuples::get<0>(prodAmpInfo).size() << endl
+	     << "    number of fit parameters ............... " << nmbPar                                    << endl
 	     << "    dimension of covariance matrix ......... " << fitParCovMatrix.GetNrows() << " x " << fitParCovMatrix.GetNcols() << endl
 	     << "    dimension of normalization matrix ...... " << normIntegral.nRows()       << " x " << normIntegral.nCols()       << endl
 	     << "    dimension of acceptance matrix ......... " << accIntegral.nRows()        << " x " << accIntegral.nCols()        << endl;
@@ -401,10 +397,8 @@ rpwa::hli::pwaFit(const pwaLikelihood<complex<double> >& L,
 	             massBinCenter,
 	             minimizer->MinValue(),
 	             L.rank(),
-	             prodAmps,
-	             prodAmpNames,
+	             prodAmpInfo,
 	             fitParCovMatrix,
-	             fitParCovMatrixIndices,
 	             normIntegral,
 	             accIntegral,
 	             phaseSpaceIntegral,  // contains the sqrt of the integral matrix diagonal elements!!!

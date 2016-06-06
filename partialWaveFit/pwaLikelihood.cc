@@ -1557,44 +1557,42 @@ pwaLikelihood<complexT>::getIntegralMatrices(complexMatrix&  normMatrix,
 // for both rank restrictions are taken into account
 template<typename complexT>
 void
-pwaLikelihood<complexT>::buildProdAmpArrays(const double*             inPar,
-                                            vector<complex<double> >& prodAmps,
-                                            vector<pair<int, int> >&  parIndices,
-                                            vector<string>&           prodAmpNames,
-                                            const bool                withFlat) const
+pwaLikelihood<complexT>::buildProdAmpArrays(const double*    inPar,
+                                            prodAmpInfoType& prodAmpInfo,
+                                            const bool       withFlat) const
 {
+	vector<string>&           prodAmpNames = bt::get<0>(prodAmpInfo);
+	vector<complex<double> >& prodAmps     = bt::get<1>(prodAmpInfo);
+	vector<pair<int, int> >&  parIndices   = bt::get<2>(prodAmpInfo);
+	prodAmpNames.clear();
 	prodAmps.clear();
 	parIndices.clear();
-	prodAmpNames.clear();
+
 	unsigned int parIndex = 0;
 	for (unsigned int iRank = 0; iRank < _rank; ++iRank) {
 		for (unsigned int iRefl = 0; iRefl < 2; ++iRefl) {
 			for (unsigned int iWave = 0; iWave < _nmbWavesRefl[iRefl]; ++iWave) {
-				double re, im;
 				if (iWave < iRank)  // zero production amplitude
 					continue;
-				else if (iWave == iRank) {  // real production amplitude
-					parIndices.push_back(make_pair(parIndex, -1));
-					re = inPar[parIndex];
-					im = 0;
-					++parIndex;
-				} else {  // complex production amplitude
-					parIndices.push_back(make_pair(parIndex, parIndex + 1));
-					re = inPar[parIndex];
-					im = inPar[parIndex + 1];
-					parIndex += 2;
-				}
-				prodAmps.push_back(complex<double>(re, im));
 				stringstream prodAmpName;
 				prodAmpName << "V" << iRank << "_" << _waveNames[iRefl][iWave];
 				prodAmpNames.push_back(prodAmpName.str());
+				if (iWave == iRank) {  // real production amplitude
+					prodAmps.push_back(complex<double>(inPar[parIndex], 0));
+					parIndices.push_back(make_pair(parIndex, -1));
+					++parIndex;
+				} else {  // complex production amplitude
+					prodAmps.push_back(complex<double>(inPar[parIndex], inPar[parIndex + 1]));
+					parIndices.push_back(make_pair(parIndex, parIndex + 1));
+					parIndex += 2;
+				}
 			}
 		}
 	}
 	if (withFlat) {
+		prodAmpNames.push_back("V_flat");
 		prodAmps.push_back(complex<double>(inPar[parIndex], 0));
 		parIndices.push_back(make_pair(parIndex, -1));
-		prodAmpNames.push_back("V_flat");
 	}
 }
 

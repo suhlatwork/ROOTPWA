@@ -4,6 +4,7 @@
 
 #include <TTree.h>
 
+#include "boostContainers_py.hpp"
 #include "fitResult.h"
 #include "rootConverters_py.h"
 #include "stlContainers_py.h"
@@ -13,39 +14,41 @@ namespace bp = boost::python;
 
 namespace {
 
-	void fitResult_fill_1(rpwa::fitResult& self,
-	                      const unsigned int                        nmbEvents,
-	                      const unsigned int                        normNmbEvents,
-	                      const double                              massBinCenter,
-	                      const double                              logLikelihood,
-	                      const int                                 rank,
-	                      const bp::object&                         pyProdAmps,
-	                      const bp::object&                         pyProdAmpNames,
-	                      PyObject*                                 pyFitParCovMatrix,
-	                      const bp::object&                         pyFitParCovMatrixIndices,
-	                      const rpwa::complexMatrix&                normIntegral,
-	                      const rpwa::complexMatrix&                acceptedNormIntegral,
-	                      const bp::object&                         pyPhaseSpaceIntegral,
-	                      const bool                                converged,
-	                      const bool                                hasHessian)
+	void fitResult_fill_1(rpwa::fitResult&           self,
+	                      const unsigned int         nmbEvents,
+	                      const unsigned int         normNmbEvents,
+	                      const double               massBinCenter,
+	                      const double               logLikelihood,
+	                      const int                  rank,
+	                      const bp::tuple&           pyProdAmpInfo,
+	                      PyObject*                  pyFitParCovMatrix,
+	                      const rpwa::complexMatrix& normIntegral,
+	                      const rpwa::complexMatrix& acceptedNormIntegral,
+	                      const bp::object&          pyPhaseSpaceIntegral,
+	                      const bool                 converged,
+	                      const bool                 hasHessian)
 	{
-		std::vector<std::complex<double> > prodAmps;
-		if(not rpwa::py::convertBPObjectToVector<std::complex<double> >(pyProdAmps, prodAmps)) {
-			PyErr_SetString(PyExc_TypeError, "Got invalid input for prodAmps when executing rpwa::fitResult::fill()");
+		boost::tuples::tuple<bp::list, bp::list, bp::list> btProdAmpInfo;
+		if(not rpwa::py::convertBPTupleToTuple<bp::list, bp::list, bp::list>(pyProdAmpInfo, btProdAmpInfo)) {
+			PyErr_SetString(PyExc_TypeError, "Got invalid input for prodAmpInfo when executing rpwa::fitResult::fill()");
 			bp::throw_error_already_set();
 		}
-		std::vector<std::string> prodAmpNames;
+		rpwa::fitResult::prodAmpInfoType prodAmpInfo;
+		const bp::list& pyProdAmpNames = boost::tuples::get<0>(btProdAmpInfo);
+		std::vector<std::string>& prodAmpNames = boost::tuples::get<0>(prodAmpInfo);
 		if(not rpwa::py::convertBPObjectToVector<std::string>(pyProdAmpNames, prodAmpNames)) {
 			PyErr_SetString(PyExc_TypeError, "Got invalid input for prodAmpNames when executing rpwa::fitResult::fill()");
 			bp::throw_error_already_set();
 		}
-		TMatrixT<double>* fitParCovMatrix = rpwa::py::convertFromPy<TMatrixT<double>* >(pyFitParCovMatrix);
-		if(not fitParCovMatrix) {
-			PyErr_SetString(PyExc_TypeError, "Got invalid input for fitParCovMatrix when executing rpwa::fitResult::fill()");
+		const bp::list& pyProdAmps = boost::tuples::get<1>(btProdAmpInfo);
+		std::vector<std::complex<double> >& prodAmps = boost::tuples::get<1>(prodAmpInfo);
+		if(not rpwa::py::convertBPObjectToVector<std::complex<double> >(pyProdAmps, prodAmps)) {
+			PyErr_SetString(PyExc_TypeError, "Got invalid input for prodAmps when executing rpwa::fitResult::fill()");
 			bp::throw_error_already_set();
 		}
-		bp::list pyListFitParCovMatrixIndices = bp::extract<bp::list>(pyFitParCovMatrixIndices);
-		std::vector<std::pair<int, int> > fitParCovMatrixIndices(bp::len(pyListFitParCovMatrixIndices));
+		const bp::list& pyListFitParCovMatrixIndices = boost::tuples::get<2>(btProdAmpInfo);
+		std::vector<std::pair<int, int> >& fitParCovMatrixIndices = boost::tuples::get<2>(prodAmpInfo);
+		fitParCovMatrixIndices.resize(bp::len(pyListFitParCovMatrixIndices));
 		for(int i = 0; i < bp::len(pyListFitParCovMatrixIndices); ++i) {
 			if(not rpwa::py::convertBPObjectToPair<int, int>(pyListFitParCovMatrixIndices[i], fitParCovMatrixIndices[i]))
 			{
@@ -55,13 +58,18 @@ namespace {
 				bp::throw_error_already_set();
 			}
 		}
+		TMatrixT<double>* fitParCovMatrix = rpwa::py::convertFromPy<TMatrixT<double>* >(pyFitParCovMatrix);
+		if(not fitParCovMatrix) {
+			PyErr_SetString(PyExc_TypeError, "Got invalid input for fitParCovMatrix when executing rpwa::fitResult::fill()");
+			bp::throw_error_already_set();
+		}
 		std::vector<double> phaseSpaceIntegral;
 		if(not rpwa::py::convertBPObjectToVector<double>(pyPhaseSpaceIntegral, phaseSpaceIntegral)) {
 			PyErr_SetString(PyExc_TypeError, "Got invalid input for phaseSpaceIntegral when executing rpwa::fitResult::fill()");
 			bp::throw_error_already_set();
 		}
-		self.fill(nmbEvents, normNmbEvents, massBinCenter, logLikelihood, rank, prodAmps, prodAmpNames, *fitParCovMatrix,
-		          fitParCovMatrixIndices, normIntegral, acceptedNormIntegral, phaseSpaceIntegral, converged, hasHessian);
+		self.fill(nmbEvents, normNmbEvents, massBinCenter, logLikelihood, rank, prodAmpInfo, *fitParCovMatrix,
+		          normIntegral, acceptedNormIntegral, phaseSpaceIntegral, converged, hasHessian);
 	}
 
 	void fitResult_fill_2(rpwa::fitResult& self, const rpwa::fitResult& result) {
@@ -280,6 +288,14 @@ namespace {
 		return retval;
 	}
 
+	bp::tuple fitResult_prodAmpInfo(const rpwa::fitResult& self)
+	{
+		const rpwa::fitResult::prodAmpInfoType prodAmpInfo = self.prodAmpInfo();
+		return bp::make_tuple(fitResult_prodAmpNames(self),
+		                      fitResult_prodAmps(self),
+		                      fitResult_fitParCovIndices(self));
+	}
+
 	std::string fitResult_printProdAmps(const rpwa::fitResult self)
 	{
 		std::stringstream sstr;
@@ -374,6 +390,7 @@ void rpwa::py::exportFitResult() {
 		.def("intensity", &fitResult_intensity_3)
 		.def("intensityErr", &fitResult_intensityErr_3)
 
+		.def("prodAmpInfo", &fitResult_prodAmpInfo)
 		.def("prodAmps", &fitResult_prodAmps)
 		.def("prodAmpNames", &fitResult_prodAmpNames)
 		.def("waveNames", &fitResult_waveNames)

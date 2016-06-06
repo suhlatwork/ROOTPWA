@@ -185,45 +185,46 @@ fitResult::reset()
 
 
 void
-fitResult::fill(const unsigned int              nmbEvents,               // number of events in bin
-                const unsigned int              normNmbEvents,           // number of events to normalize to
-                const double                    massBinCenter,           // center value of mass bin
-                const double                    logLikelihood,           // log(likelihood) at maximum
-                const int                       rank,                    // rank of fit
-                const vector<complex<double> >& prodAmps,                // production amplitudes
-                const vector<string>&           prodAmpNames,            // names of production amplitudes used in fit
-                const TMatrixT<double>&         fitParCovMatrix,         // covariance matrix of fit parameters
-                const vector<pair<int, int> >&  fitParCovMatrixIndices,  // indices of fit parameters for real and imaginary part in covariance matrix matrix
-                const complexMatrix&            normIntegral,            // normalization integral matrix
-                const complexMatrix&            acceptedNormIntegral,    // normalization integral matrix with acceptance
-                const vector<double>&           phaseSpaceIntegral,      // normalization integral over full phase space without acceptance
-                const bool                      converged,
-                const bool                      hasHessian)
+fitResult::fill(const unsigned int      nmbEvents,             // number of events in bin
+                const unsigned int      normNmbEvents,         // number of events to normalize to
+                const double            massBinCenter,         // center value of mass bin
+                const double            logLikelihood,         // log(likelihood) at maximum
+                const int               rank,                  // rank of fit
+                const prodAmpInfoType&  prodAmpInfo,           // production amplitude information
+                const TMatrixT<double>& fitParCovMatrix,       // covariance matrix of fit parameters
+                const complexMatrix&    normIntegral,          // normalization integral matrix
+                const complexMatrix&    acceptedNormIntegral,  // normalization integral matrix with acceptance
+                const vector<double>&   phaseSpaceIntegral,    // normalization integral over full phase space without acceptance
+                const bool              converged,
+                const bool              hasHessian)
 {
-	_converged     = converged;
-	_hasHessian    = hasHessian;
-	_nmbEvents     = nmbEvents;
-	_normNmbEvents = normNmbEvents;
-	_massBinCenter = massBinCenter;
-	_logLikelihood = logLikelihood;
-	_rank          = rank;
+	_nmbEvents              = nmbEvents;
+	_normNmbEvents          = normNmbEvents;
+	_massBinCenter          = massBinCenter;
+	_logLikelihood          = logLikelihood;
+	_rank                   = rank;
+
+	const vector<complex<double> >& prodAmps = boost::tuples::get<1>(prodAmpInfo);
 	_prodAmps.resize(prodAmps.size());
 	for (unsigned int i = 0; i < prodAmps.size(); ++i)
 		_prodAmps[i] = TComplex(prodAmps[i].real(), prodAmps[i].imag());
-	_prodAmpNames  = prodAmpNames;
-	_fitParCovMatrix.ResizeTo(fitParCovMatrix.GetNrows(), fitParCovMatrix.GetNcols());
-	_fitParCovMatrix        = fitParCovMatrix;
-	_fitParCovMatrixIndices = fitParCovMatrixIndices;
+
+	_prodAmpNames           = boost::tuples::get<0>(prodAmpInfo);
+
 	// check whether there really is an error matrix
 	if (not (fitParCovMatrix.GetNrows() == 0) and not (fitParCovMatrix.GetNcols() == 0))
 		_covMatrixValid = true;
 	else
 		_covMatrixValid = false;
-	_normIntegral.resizeTo(normIntegral.nRows(), normIntegral.nCols());
-	_normIntegral         = normIntegral;
-	_acceptedNormIntegral.resizeTo(acceptedNormIntegral.nRows(), acceptedNormIntegral.nCols());
-	_acceptedNormIntegral = acceptedNormIntegral;
-	_phaseSpaceIntegral   = phaseSpaceIntegral;
+	_fitParCovMatrix.ResizeTo(fitParCovMatrix.GetNrows(), fitParCovMatrix.GetNcols());
+	_fitParCovMatrix        = fitParCovMatrix;
+	_fitParCovMatrixIndices = boost::tuples::get<2>(prodAmpInfo);
+
+	_normIntegral           = normIntegral;
+	_acceptedNormIntegral   = acceptedNormIntegral;
+	_phaseSpaceIntegral     = phaseSpaceIntegral;
+	_converged              = converged;
+	_hasHessian             = hasHessian;
 
 	// get wave list from production amplitudes and fill map for
 	// production-amplitude indices to indices in normalization integral
