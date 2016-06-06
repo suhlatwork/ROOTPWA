@@ -46,6 +46,7 @@
 
 #ifndef __CINT__
 #include <boost/shared_ptr.hpp>
+#include <boost/tuple/tuple.hpp>
 #endif
 
 #include "TObject.h"
@@ -109,6 +110,12 @@ namespace rpwa {
 
 	public:
 
+#ifndef __CINT__
+		typedef boost::tuples::tuple<std::vector<std::string>,                             // tuple for production amplitude name,
+		                             std::vector<std::complex<double> >,                   //           value,
+		                             std::vector<std::pair<int, int> > > prodAmpInfoType;  //           and indices in covariance matrix
+#endif
+
 		fitResult();
 		fitResult(const fitResult& result);
 		virtual ~fitResult();
@@ -116,20 +123,20 @@ namespace rpwa {
 		fitResult* variedProdAmps() const;  ///< create a copy with production amplitudes varied according to covariance matrix
 
 		void reset();
-		void fill(const unsigned int                        nmbEvents,               // number of events in bin
-		          const unsigned int                        normNmbEvents,           // number of events to normalize to
-		          const double                              massBinCenter,           // center value of mass bin
-		          const double                              logLikelihood,           // log(likelihood) at maximum
-		          const int                                 rank,                    // rank of fit
-		          const std::vector<std::complex<double> >& prodAmps,                // production amplitudes
-		          const std::vector<std::string>&           prodAmpNames,            // names of production amplitudes used in fit
-		          const TMatrixT<double>&                   fitParCovMatrix,         // covariance matrix of fit parameters
-		          const std::vector<std::pair<int, int> >&  fitParCovMatrixIndices,  // indices of fit parameters for real and imaginary part in covariance matrix
-		          const rpwa::complexMatrix&                normIntegral,            // normalization integral matrix
-		          const rpwa::complexMatrix&                acceptedNormIntegral,    // normalization integral matrix with acceptance
-		          const std::vector<double>&                phaseSpaceIntegral,      // normalization integral over full phase space without acceptance
-		          const bool                                converged,               // indicates whether fit has converged (according to minimizer)
-		          const bool                                hasHessian);             // indicates whether Hessian matrix has been calculated successfully
+#ifndef __CINT__
+		void fill(const unsigned int         nmbEvents,             // number of events in bin
+		          const unsigned int         normNmbEvents,         // number of events to normalize to
+		          const double               massBinCenter,         // center value of mass bin
+		          const double               logLikelihood,         // log(likelihood) at maximum
+		          const int                  rank,                  // rank of fit
+		          const prodAmpInfoType&     prodAmpInfo,           // production amplitude information
+		          const TMatrixT<double>&    fitParCovMatrix,       // covariance matrix of fit parameters
+		          const rpwa::complexMatrix& normIntegral,          // normalization integral matrix
+		          const rpwa::complexMatrix& acceptedNormIntegral,  // normalization integral matrix with acceptance
+		          const std::vector<double>& phaseSpaceIntegral,    // normalization integral over full phase space without acceptance
+		          const bool                 converged,             // indicates whether fit has converged (according to minimizer)
+		          const bool                 hasHessian);           // indicates whether Hessian matrix has been calculated successfully
+#endif
 		void fill(const fitResult& result);
 
 		unsigned int        nmbEvents         () const { return _nmbEvents;         }  ///< returns number of events in bin
@@ -268,6 +275,9 @@ namespace rpwa {
 
 
 		// low level interface to make copying easier
+#ifndef __CINT__
+		inline prodAmpInfoType                       prodAmpInfo               () const;
+#endif
 		const std::vector<TComplex>&                 prodAmps                  () const { return _prodAmps;               }
 		const std::vector<std::string>&              prodAmpNames              () const { return _prodAmpNames;           }
 		const std::vector<std::string>&              waveNames                 () const { return _waveNames;              }
@@ -400,6 +410,21 @@ namespace rpwa {
 		prodAmpIndices.insert(prodAmpIndices.end(), prodAmpIndicesB.begin(), prodAmpIndicesB.end());
 		return prodAmpCov(prodAmpIndices);
 	}
+
+
+#ifndef __CINT__
+	// build the vector of production amplitude information that can be used to call fill
+	inline
+	fitResult::prodAmpInfoType
+	fitResult::prodAmpInfo() const
+	{
+		std::vector<std::complex<double> > prodAmps(nmbProdAmps());
+		for (unsigned int i = 0; i < nmbProdAmps(); ++i) {
+			prodAmps[i] = prodAmp(i);
+		}
+		return boost::tuples::make_tuple(prodAmpNames(), prodAmps, _fitParCovMatrixIndices);
+	}
+#endif
 
 
 	// prints all production amplitudes and their covariance matrix

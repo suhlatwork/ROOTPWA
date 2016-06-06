@@ -185,27 +185,20 @@ main(int    argc,
 
 	for(long i = 0; i < inResultTree->GetEntries(); ++i) {
 		inResultTree->GetEntry(i);
-		const unsigned int             nmbEvents              = inResult->nmbEvents();
-		const unsigned int             normNmbEvents          = inResult->normNmbEvents();
-		const double                   massBinCenter          = inResult->massBinCenter();
-		const double                   logLikelihood          = inResult->logLikelihood();
-		const int                      rank                   = inResult->rank();
+		const unsigned int               nmbEvents          = inResult->nmbEvents();
+		const unsigned int               normNmbEvents      = inResult->normNmbEvents();
+		const double                     massBinCenter      = inResult->massBinCenter();
+		const double                     logLikelihood      = inResult->logLikelihood();
+		const int                        rank               = inResult->rank();
+		const fitResult::prodAmpInfoType prodAmpInfo        = inResult->prodAmpInfo();
+		const TMatrixT<double>&          fitParCovMatrix    = inResult->fitParCovMatrix();
 
-		const vector<TComplex>&        prodAmpsTComplex       = inResult->prodAmps();
-		const unsigned int             nmbProdAmps            = prodAmpsTComplex.size();
-		vector<complex<double> >       prodAmps(nmbProdAmps);
-		for(unsigned int i = 0; i < nmbProdAmps; ++i) {
-			prodAmps[i] = complex<double>(prodAmpsTComplex[i].Re(), prodAmpsTComplex[i].Im());
-		}
+		complexMatrix                    normIntegral       = inResult->normIntegralMatrix();
+		complexMatrix                    accIntegral        = inResult->acceptedNormIntegralMatrix();
+		vector<double>                   phaseSpaceIntegral = inResult->phaseSpaceIntegralVector();
 
-		const vector<string>&          prodAmpNames           = inResult->prodAmpNames();
-		const TMatrixT<double>&        fitParCovMatrix        = inResult->fitParCovMatrix();
-		const vector<pair<int, int> >& fitParCovMatrixIndices = inResult->fitParCovIndices();
-		complexMatrix                  normIntegral           = inResult->normIntegralMatrix();
-		complexMatrix                  accIntegral            = inResult->acceptedNormIntegralMatrix();
-		vector<double>                 phaseSpaceIntegral     = inResult->phaseSpaceIntegralVector();
-		const bool                     converged              = inResult->converged();
-		const bool                     hasHessian             = inResult->hasHessian();
+		const bool                       converged          = inResult->converged();
+		const bool                       hasHessian         = inResult->hasHessian();
 
 		if(normIntegral.nCols() != 0 or normIntegral.nRows() != 0 or
 		   accIntegral.nCols() != 0 or accIntegral.nRows() != 0 or
@@ -277,10 +270,8 @@ main(int    argc,
 		                massBinCenter,
 		                logLikelihood,
 		                rank,
-		                prodAmps,
-		                prodAmpNames,
+		                prodAmpInfo,
 		                fitParCovMatrix,
-		                fitParCovMatrixIndices,
 		                normIntegral,
 		                accIntegral,
 		                phaseSpaceIntegral,
