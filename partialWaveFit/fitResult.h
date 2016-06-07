@@ -267,6 +267,10 @@ namespace rpwa {
 		double intensityErr() const { return intensityErr(".*"); }
 
 
+		// multiply spin-density matrix elements with an amplitude matrix
+		template<typename T> double spinDensityMatrixTimesAmplitudeMatrix(const std::vector<unsigned int>& waveIndices, const T& amplitudeMatrix) const;
+
+
 		// low level interface to make copying easier
 		const std::vector<TComplex>&                 prodAmps                  () const { return _prodAmps;               }
 		const std::vector<std::string>&              prodAmpNames              () const { return _prodAmpNames;           }
@@ -574,6 +578,28 @@ namespace rpwa {
 			return "";
 		}
 		return prodAmpName.substr(prodAmpName.find('_')+1);
+	}
+
+
+	/// multiply spin-density matrix elements with an amplitude matrix
+	// could for example be used to calculate intensities of multiple waves
+	// taking the interference into account, but this would probably be a
+	// tiny bit slower as the optimized function does not need to multiply
+	// with 1. for the diagonal elements, i.e.:
+	//    spinDensityMatrixTimesAmplitudeMatrix(waveIndices, _normIntegral)
+	template<typename T>
+	double
+	fitResult::spinDensityMatrixTimesAmplitudeMatrix(const std::vector<unsigned int>& waveIndices,
+	                                                 const T& amplitudeMatrix) const
+	{
+		double result = 0;
+		for (unsigned int i = 0; i < waveIndices.size(); ++i) {
+			result += spinDensityMatrixElem(waveIndices[i], waveIndices[i]).real() * amplitudeMatrix(waveIndices[i], waveIndices[i]).real();
+			for (unsigned int j = 0; j < i; ++j) {
+				result += 2. * (spinDensityMatrixElem(waveIndices[i], waveIndices[j]) * amplitudeMatrix(waveIndices[i], waveIndices[j])).real();
+			}
+		}
+		return result;
 	}
 
 
