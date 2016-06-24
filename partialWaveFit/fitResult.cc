@@ -760,6 +760,72 @@ fitResult::spinDensityMatrixElemCov(const unsigned int waveIndexA,
 }
 
 
+/// \brief calculates covariance matrix of spin density matrix element for pair of waves given by index list
+// * for n waves this is a n*(n+1) matrix
+// * the 2x2 blocks along the diagonal correspond to the covariance matrices of
+//   individual spin-density matrix elements
+// * the spin-density matrix elements are order like:
+//   rho00 rho01 ... rho0(N-1) rho11 rho12 ... rho1(N-1) ... rho(N-2)(N-1) rho(N-1)(N-1)
+TMatrixT<double>
+fitResult::spinDensityMatrixElemCov(const std::vector<unsigned int> waveIndices) const
+{
+	const unsigned int nmbWaves = waveIndices.size();
+
+	// get amplitude indices for waves
+	vector<unsigned int> prodAmpIndices;
+	vector<unsigned int> prodAmpStartIndexForWaves;
+	for (unsigned int i = 0; i < nmbWaves; ++i) {
+		prodAmpStartIndexForWaves.push_back(prodAmpIndices.size());
+		const vector<unsigned int> prodAmpIndicesWave = prodAmpIndicesForWave(waveIndices[i]);
+		prodAmpIndices.insert(prodAmpIndices.end(), prodAmpIndicesWave.begin(), prodAmpIndicesWave.end());
+	}
+	prodAmpStartIndexForWaves.push_back(prodAmpIndices.size());
+	const unsigned int nmbAmps = prodAmpIndices.size();
+
+	// build Jacobian, which is a #waves*(#waves+1) x 2*#prodAmps matrix
+	TMatrixT<double> M(2, 2);  // complex conjugation of V_Br is non-analytic operation
+	M[0][0] =  1;
+	M[1][1] = -1;
+	TMatrixT<double> jacobian(nmbWaves*(nmbWaves+1), 2 * nmbAmps);
+	for (unsigned int i = 0; i < nmbWaves; ++i) {
+		for (unsigned int j = i; j < nmbWaves; ++j) {
+			for (unsigned int k = prodAmpStartIndexForWaves[i]; k < prodAmpStartIndexForWaves[i+1]; ++k) {
+				// k is looping over the indices for the production amplitudes of wave i
+				const unsigned int ampIndexK = prodAmpIndices[k];
+				for (unsigned int l = prodAmpStartIndexForWaves[j]; l < prodAmpStartIndexForWaves[j+1]; ++l) {
+					// l is looping over the indices for the production amplitudes of wave j
+					const unsigned int ampIndexL = prodAmpIndices[l];
+
+					// spin-density matrix element is the sum of the products of amplitudes with equal rank
+					if (rankOfProdAmp(ampIndexK) == rankOfProdAmp(ampIndexL)) {
+						const TMatrixT<double> subJacobianK = matrixRepr(conj(prodAmp(ampIndexL)));
+						const TMatrixT<double> subJacobianL = matrixRepr(prodAmp(ampIndexK)) * M;
+
+						if (i == j) {
+							jacobian.SetSub(nmbWaves*(nmbWaves+1) - (nmbWaves-i)*(nmbWaves-i+1) + 2*(j-i), 2*k, subJacobianK + subJacobianL);
+						} else {
+							jacobian.SetSub(nmbWaves*(nmbWaves+1) - (nmbWaves-i)*(nmbWaves-i+1) + 2*(j-i), 2*k, subJacobianK);
+							jacobian.SetSub(nmbWaves*(nmbWaves+1) - (nmbWaves-i)*(nmbWaves-i+1) + 2*(j-i), 2*l, subJacobianL);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// get covariance matrix for production amplitudes
+	const TMatrixT<double> prodAmpCov = this->prodAmpCov(prodAmpIndices);
+
+	// calculate spin density covariance matrix
+	const TMatrixT<double> jacobianT(TMatrixT<double>::kTransposed, jacobian);
+	// binary operations are unavoidable, since matrices are not squared
+	// !!! possible optimaztion: use special TMatrixT constructors to perform the multiplication
+	const TMatrixT<double> prodAmpCovJT = prodAmpCov * jacobianT;
+	const TMatrixT<double> spinDensCov  = jacobian   * prodAmpCovJT;
+	return spinDensCov;
+}
+
+
 /// calculates phase difference between wave A and wave B
 double
 fitResult::phase(const unsigned int waveIndexA,

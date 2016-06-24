@@ -127,6 +127,17 @@ namespace {
 		return rpwa::py::convertToPy<TMatrixT<double> >(self.spinDensityMatrixElemCov(waveIndexA, waveIndexB));
 	}
 
+	PyObject* fitResult_spinDensityMatrixElemCov_3(const rpwa::fitResult& self,
+	                                               const bp::list& pyWaveIndices)
+	{
+		std::vector<unsigned int> waveIndices;
+		if(not rpwa::py::convertBPObjectToVector<unsigned int>(pyWaveIndices, waveIndices)) {
+			PyErr_SetString(PyExc_TypeError, "Got invalid input for waveIndices when executing rpwa::fitResult::spinDensityMatrixElemCov()");
+			bp::throw_error_already_set();
+		}
+		return rpwa::py::convertToPy<TMatrixT<double> >(self.spinDensityMatrixElemCov(waveIndices));
+	}
+
 	double fitResult_phase_1(const rpwa::fitResult& self,
 	                         const unsigned int waveIndexA,
 	                         const unsigned int waveIndexB)
@@ -375,6 +386,7 @@ void rpwa::py::exportFitResult() {
 
 		.def("spinDensityMatrixElem", &fitResult_spinDensityMatrixElem_1)
 		.def("spinDensityMatrixElemCov", &fitResult_spinDensityMatrixElemCov_1)
+		.def("spinDensityMatrixElemCov", &fitResult_spinDensityMatrixElemCov_3)
 		.def("phase", &fitResult_phase_1)
 		.def("phaseErr", &fitResult_phaseErr_1)
 		.def("coherence", &fitResult_coherence_1)

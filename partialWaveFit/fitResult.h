@@ -191,6 +191,8 @@ namespace rpwa {
 		/// returns covariance matrix of spin density matrix element for pair of waves at index A and B
 		TMatrixT<double>     spinDensityMatrixElemCov(const unsigned int waveIndexA,
 		                                              const unsigned int waveIndexB) const;
+		/// returns covariance matrix of spin density matrix elements for pair of waves given by index list
+		TMatrixT<double>     spinDensityMatrixElemCov(const std::vector<unsigned int> waveIndices) const;
 
 		/// returns phase difference between pair of waves at index A and B
 		double phase   (const unsigned int waveIndexA,
