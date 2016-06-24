@@ -83,7 +83,7 @@ usage(const std::string& progName,
 	          << "        -C #       part of the covariance matrix to use:" << std::endl
 	          << "                       1 = only diagonal elements" << std::endl
 	          << "                       2 = take covariance between real and imaginary part of the same complex number into account" << std::endl
-	          << "                       3 = full covariance matrix (not available while fitting to the spin-density matrix)" << std::endl
+	          << "                       3 = full covariance matrix" << std::endl
 	          << "        -d         additional debug output (default: false)" << std::endl
 	          << "        -q         run quietly (default: false)" << std::endl
 	          << "        -h         print help" << std::endl

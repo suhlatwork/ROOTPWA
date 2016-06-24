@@ -88,6 +88,8 @@ namespace rpwa {
 			                                     rpwa::resonanceFit::cache& cache) const;
 			double chiSquareSpinDensityMatrix(const rpwa::resonanceFit::parameters& fitParameters,
 			                                  rpwa::resonanceFit::cache& cache) const;
+			double chiSquareSpinDensityMatrixFullCovariance(const rpwa::resonanceFit::parameters& fitParameters,
+			                                                rpwa::resonanceFit::cache& cache) const;
 
 			const rpwa::resonanceFit::dataConstPtr _fitData;
 			const rpwa::resonanceFit::modelConstPtr _fitModel;

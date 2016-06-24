@@ -51,11 +51,6 @@ rpwa::resonanceFit::function::function(const rpwa::resonanceFit::dataConstPtr& f
 	  _useProductionAmplitudes(useProductionAmplitudes),
 	  _useCovariance(_fitData->useCovariance())
 {
-	if(not _useProductionAmplitudes and _useCovariance == useFullCovarianceMatrix) {
-		printErr << "cannot use full covariance matrix while fitting to spin-density matrix." << std::endl;
-		throw;
-	}
-
 	_idxMassMax.resize(_nrBins);
 	_idxMassMin.resize(_nrBins);
 	for(size_t idxBin = 0; idxBin < _nrBins; ++idxBin) {
@@ -171,7 +166,11 @@ rpwa::resonanceFit::function::chiSquare(const rpwa::resonanceFit::parameters& fi
 	if(_useProductionAmplitudes) {
 		return chiSquareProductionAmplitudes(fitParameters, cache);
 	} else {
-		return chiSquareSpinDensityMatrix(fitParameters, cache);
+		if(_useCovariance == useFullCovarianceMatrix) {
+			return chiSquareSpinDensityMatrixFullCovariance(fitParameters, cache);
+		} else {
+			return chiSquareSpinDensityMatrix(fitParameters, cache);
+		}
 	}
 }
 
@@ -342,6 +341,50 @@ rpwa::resonanceFit::function::chiSquareSpinDensityMatrix(const rpwa::resonanceFi
 					}
 				} // end loop over jdxWave
 			} // end loop over idxWave
+		} // end loop over mass-bins
+	} // end loop over bins
+
+	return chi2;
+}
+
+
+double
+rpwa::resonanceFit::function::chiSquareSpinDensityMatrixFullCovariance(const rpwa::resonanceFit::parameters& fitParameters,
+                                                                       rpwa::resonanceFit::cache& cache) const
+{
+	double chi2=0;
+
+	// loop over bins
+	for(unsigned idxBin = 0; idxBin < _nrBins; ++idxBin) {
+		// loop over mass-bins
+		for(unsigned idxMass = _idxMassMin[idxBin]; idxMass <= _idxMassMax[idxBin]; ++idxMass) {
+			const double mass = _fitData->massBinCenters()[idxBin][idxMass];
+
+			TVectorT<double> spinDensityMatrixElementsDiff(_fitData->nrWaves(idxBin) * (_fitData->nrWaves(idxBin)+1));
+
+			// sum over the contributions to chi2 -> rho_ij
+			for(size_t idxWave = 0; idxWave < _fitData->nrWaves(idxBin); ++idxWave) {
+				for(size_t jdxWave = idxWave; jdxWave < _fitData->nrWaves(idxBin); ++jdxWave) {
+					// check that this mass bin should be taken into account for this
+					// combination of waves
+					if(idxMass < _fitData->wavePairMassBinLimits()[idxBin][idxWave][jdxWave].first or idxMass > _fitData->wavePairMassBinLimits()[idxBin][idxWave][jdxWave].second) {
+						continue;
+					}
+
+					// calculate target spin density matrix element
+					const std::complex<double> rhoFit = _fitModel->spinDensityMatrix(fitParameters, cache, idxWave, jdxWave, idxBin, mass, idxMass);
+
+					const std::complex<double> rhoDiff = rhoFit - _fitData->spinDensityMatrixElements()[idxBin][idxMass][idxWave][jdxWave];
+
+					const Int_t row = _fitData->nrWaves(idxBin)*(_fitData->nrWaves(idxBin)+1) - (_fitData->nrWaves(idxBin)-idxWave)*(_fitData->nrWaves(idxBin)-idxWave+1) + 2*(jdxWave-idxWave);
+					spinDensityMatrixElementsDiff(row) = rhoDiff.real();
+					if(idxWave != jdxWave) {
+						spinDensityMatrixElementsDiff(row+1) = rhoDiff.imag();
+					}
+				} // end loop over jdxWave
+			} // end loop over idxWave
+
+			chi2 += _fitData->spinDensityMatrixElementsCovMatInv()[idxBin][idxMass].Similarity(spinDensityMatrixElementsDiff);
 		} // end loop over mass-bins
 	} // end loop over bins
 

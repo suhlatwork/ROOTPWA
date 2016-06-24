@@ -711,7 +711,7 @@ namespace {
 				throw;
 			}
 
-			spinDensityCovarianceMatrices[idxMass].ResizeTo(fitInputBin.nrWaves() * (fitInputBin.nrWaves() + 1), fitInputBin.nrWaves() * (fitInputBin.nrWaves() + 1));
+			std::vector<unsigned int> waveIndicesForCov(fitInputBin.nrWaves());
 			for(size_t idxWave = 0; idxWave < fitInputBin.nrWaves(); ++idxWave) {
 				const int idx = fit->waveIndex(fitInputBin.getWave(idxWave).waveName());
 				if(idx == -1) {
@@ -737,15 +737,13 @@ namespace {
 					                                                           fit->phaseErr(idx, jdx) * sqrt(fitInputBin.rescaleErrors()));
 
 					spinDensityMatrices[idxMass][idxWave][jdxWave] = fit->spinDensityMatrixElem(idx, jdx);
-
-					if(jdxWave >= idxWave) {
-						const TMatrixT<double> spinDensityMatrixElemCov = fit->spinDensityMatrixElemCov(idx, jdx) * fitInputBin.rescaleErrors();
-
-						const size_t idxCov = fitInputBin.nrWaves() * (fitInputBin.nrWaves() + 1) - (fitInputBin.nrWaves() - idxWave) * (fitInputBin.nrWaves() - idxWave + 1) + 2 * (jdxWave - idxWave);
-						spinDensityCovarianceMatrices[idxMass].SetSub(idxCov, idxCov, spinDensityMatrixElemCov);
-					}
 				}
+
+				waveIndicesForCov[idxWave] = idx;
 			}
+			const TMatrixT<double> spinDensityMatrixElemCov = fit->spinDensityMatrixElemCov(waveIndicesForCov) * fitInputBin.rescaleErrors();
+			spinDensityCovarianceMatrices[idxMass].ResizeTo(spinDensityMatrixElemCov);
+			spinDensityCovarianceMatrices[idxMass] = spinDensityMatrixElemCov;
 
 			// for the production amplitudes loop over the production
 			// amplitudes of the fit result
