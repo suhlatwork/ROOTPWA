@@ -3,11 +3,35 @@
 #include"waveDescription.h"
 
 
+namespace {
+
+
+	template<typename T>
+	class amplitudeMatrixAdapter {
+
+	public:
+
+		amplitudeMatrixAdapter(const std::vector<T>& amplitudes)
+			: _amplitudes(amplitudes)
+		{
+		}
+
+		T operator()(const unsigned int i, const unsigned int j) const { return _amplitudes[i]*conj(_amplitudes[j]); }
+
+	private:
+
+		const std::vector<T>& _amplitudes;
+
+	};
+
+
+}
+
+
 rpwa::modelIntensity::modelIntensity(fitResultPtr fitResult)
 	: _fitResult(fitResult),
 	  _decayAmplitudesInitialized(false),
 	  _decayAmplitudes(fitResult->nmbWaves()),
-	  _refls(fitResult->nmbWaves(), 0),
 	  _phaseSpaceIntegralsLoaded(false),
 	  _phaseSpaceIntegrals(fitResult->nmbWaves()),
 	  _decayAmplitudesFromXDecay(false)
@@ -38,8 +62,6 @@ rpwa::modelIntensity::addDecayAmplitude(rpwa::isobarAmplitudePtr decayAmplitude)
 
 	_decayAmplitudesInitialized = false;
 	_decayAmplitudes[waveIndex] = decayAmplitude;
-	_refls          [waveIndex] = decayAmplitude->decayTopology()->XIsobarDecayVertex()->parent()->reflectivity();
-	_allRefls.insert(decayAmplitude->decayTopology()->XIsobarDecayVertex()->parent()->reflectivity());
 	return true;
 }
 
@@ -171,19 +193,10 @@ rpwa::modelIntensity::getIntensity(const std::vector<unsigned int>& waveIndices,
                                    const std::vector<TVector3>&     prodKinMomenta,
                                    const std::vector<TVector3>&     decayKinMomenta) const
 {
-	const std::vector<std::complex<double> > decayAmplitudes = getDecayAmplitudes(prodKinMomenta, decayKinMomenta);
+	const std::vector<std::complex<double> >            amplitudes = getAmplitudes(prodKinMomenta, decayKinMomenta);
+	const amplitudeMatrixAdapter<std::complex<double> > ampMatrix(amplitudes);
 
-	double intensity = 0;
-	for (std::set<int>::const_iterator it=_allRefls.begin(); it!=_allRefls.end(); ++it) {
-		std::complex<double> amp = 0;
-		for (size_t i=0; i<waveIndices.size(); ++i) {
-			const unsigned int waveIndex = waveIndices[i];
-			if (_refls[waveIndex] == *it) {
-				amp += _fitResult->prodAmp(waveIndex) * decayAmplitudes[waveIndex];
-			}
-		}
-		intensity += std::norm(amp);
-	}
+	const double intensity = _fitResult->spinDensityMatrixTimesAmplitudeMatrix(waveIndices, ampMatrix);
 
 	return intensity;
 }

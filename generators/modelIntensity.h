@@ -74,8 +74,6 @@ namespace rpwa {
 
 		bool                               _decayAmplitudesInitialized;
 		std::vector<isobarAmplitudePtr>    _decayAmplitudes;
-		std::vector<int>                   _refls;
-		std::set<int>                      _allRefls;
 
 		bool                               _phaseSpaceIntegralsLoaded;
 		std::vector<double>                _phaseSpaceIntegrals;
